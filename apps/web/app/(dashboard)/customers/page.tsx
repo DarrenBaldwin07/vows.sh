@@ -9,7 +9,11 @@ import {
 	CustomerImage,
 	CustomerImageUpload,
 } from '@/components/customer-image';
-import { EmptyState, Field, Loading, Message, Modal } from '@/components/ui';
+import { EmptyState, Field, Message, Modal } from '@/components/ui';
+import {
+	CustomerTableHeader,
+	CustomerTableLoading,
+} from '@/components/customer-table';
 
 export default function CustomersPage() {
 	const { orgId } = useAuth();
@@ -74,16 +78,12 @@ export default function CustomersPage() {
 					/>
 				</div>
 				{query.isPending ? (
-					<Loading />
+					<CustomerTableLoading />
 				) : query.error ? (
 					<Message error>{query.error.message}</Message>
 				) : rows.length ? (
 					<div className='customer-table'>
-						<div className='customer-table-head'>
-							<span>Customer</span>
-							<span>Open requests</span>
-							<span>Last updated</span>
-						</div>
+						<CustomerTableHeader />
 						{rows.map((c) => (
 							<Link
 								className='customer-row'

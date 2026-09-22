@@ -9,22 +9,16 @@ import {
 } from '@repo/ui/components/tooltip';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-	useRef,
-	useState,
-	useSyncExternalStore,
-	type CSSProperties,
-	type ReactNode,
-} from 'react';
+import { useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Loading } from './ui';
 import { WorkspaceSwitcher } from './workspace-switcher';
 import { AccountMenu } from './account-menu';
 import { CommandMenu } from './command-menu';
-
-const sidebarWidthKey = 'vows.sidebar-width';
-const defaultSidebarWidth = 208;
-const clampSidebarWidth = (width: number) =>
-	Math.min(320, Math.max(168, width));
+import {
+	sidebarWidthKey,
+	defaultSidebarWidth,
+	clampSidebarWidth,
+} from '@/lib/sidebar-width';
 function getSavedSidebarWidth() {
 	try {
 		const saved = window.localStorage.getItem(sidebarWidthKey);
@@ -38,7 +32,13 @@ function getSavedSidebarWidth() {
 }
 function subscribeSidebarWidth(onChange: () => void) {
 	function changed(event: StorageEvent) {
-		if (event.key === sidebarWidthKey || event.key === null) onChange();
+		if (event.key === sidebarWidthKey || event.key === null) {
+			document.documentElement.style.setProperty(
+				'--sidebar-width',
+				`${getSavedSidebarWidth()}px`
+			);
+			onChange();
+		}
 	}
 	window.addEventListener('storage', changed);
 	return () => window.removeEventListener('storage', changed);
@@ -60,6 +60,10 @@ export function Shell({ children }: { children: ReactNode }) {
 	function resize(width: number) {
 		const nextWidth = clampSidebarWidth(width);
 		setAdjustedWidth(nextWidth);
+		document.documentElement.style.setProperty(
+			'--sidebar-width',
+			`${nextWidth}px`
+		);
 		try {
 			window.localStorage.setItem(sidebarWidthKey, String(nextWidth));
 		} catch {
@@ -94,9 +98,7 @@ export function Shell({ children }: { children: ReactNode }) {
 			</main>
 		);
 	return (
-		<div
-			className={`app-shell ${resizing ? 'sidebar-resizing' : ''}`}
-			style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}>
+		<div className={`app-shell ${resizing ? 'sidebar-resizing' : ''}`}>
 			<aside className='sidebar' id='dashboard-sidebar'>
 				<div className='workspace-switcher'>
 					<WorkspaceSwitcher />

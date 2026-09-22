@@ -3,6 +3,7 @@ import { shadcn } from '@clerk/ui/themes';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import { Providers } from './providers';
+import { sidebarWidthScript } from '@/lib/sidebar-width';
 import './globals.css';
 const geistSans = localFont({
 	src: './fonts/GeistVF.woff',
@@ -22,7 +23,10 @@ export default function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
-		<html lang='en'>
+		<html lang='en' suppressHydrationWarning>
+			<head>
+				<script dangerouslySetInnerHTML={{ __html: sidebarWidthScript }} />
+			</head>
 			<body className={`${geistSans.variable} ${geistMono.variable}`}>
 				<ClerkProvider
 					appearance={{ theme: shadcn }}

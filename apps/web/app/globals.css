@@ -446,6 +446,34 @@ h3 {
 	font-size: 11px;
 	margin-top: 3px;
 }
+.customer-loading-name {
+	width: 140px;
+	max-width: calc(100% - 48px);
+}
+.customer-loading-name .skeleton {
+	height: auto;
+	color: transparent;
+}
+.customer-loading-name strong.skeleton {
+	display: inline;
+}
+.customer-loading-name small.skeleton {
+	width: 85%;
+}
+.customer-identity > .initial-badge {
+	width: 35px;
+	height: 35px;
+}
+.customer-loading-count {
+	width: 72px;
+	height: 20px;
+}
+.customer-loading-date {
+	width: 64px;
+}
+.customer-row-loading:hover {
+	background: transparent;
+}
 .count-pill {
 	font-size: 11px;
 	color: #525252;
