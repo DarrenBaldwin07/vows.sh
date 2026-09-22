@@ -3,20 +3,63 @@ import { useAuth } from '@clerk/nextjs';
 import { Users, Plug, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+	useRef,
+	useState,
+	useSyncExternalStore,
+	type CSSProperties,
+	type ReactNode,
+} from 'react';
 import { Loading } from './ui';
 import { WorkspaceSwitcher } from './workspace-switcher';
 import { AccountMenu } from './account-menu';
 import { CommandMenu } from './command-menu';
 
+const sidebarWidthKey = 'vows.sidebar-width';
+const defaultSidebarWidth = 208;
+const clampSidebarWidth = (width: number) =>
+	Math.min(320, Math.max(168, width));
+function getSavedSidebarWidth() {
+	try {
+		const saved = window.localStorage.getItem(sidebarWidthKey);
+		const width = Number(saved);
+		return saved?.trim() && Number.isFinite(width)
+			? clampSidebarWidth(width)
+			: defaultSidebarWidth;
+	} catch {
+		return defaultSidebarWidth;
+	}
+}
+function subscribeSidebarWidth(onChange: () => void) {
+	function changed(event: StorageEvent) {
+		if (event.key === sidebarWidthKey || event.key === null) onChange();
+	}
+	window.addEventListener('storage', changed);
+	return () => window.removeEventListener('storage', changed);
+}
+const getServerSidebarWidth = () => defaultSidebarWidth;
+
 export function Shell({ children }: { children: ReactNode }) {
 	const { orgId, isLoaded } = useAuth();
 	const pathname = usePathname();
-	const [sidebarWidth, setSidebarWidth] = useState(208);
+	const savedWidth = useSyncExternalStore(
+		subscribeSidebarWidth,
+		getSavedSidebarWidth,
+		getServerSidebarWidth
+	);
+	const [adjustedWidth, setAdjustedWidth] = useState<number | null>(null);
+	const sidebarWidth = adjustedWidth ?? savedWidth;
 	const [resizing, setResizing] = useState(false);
 	const drag = useRef({ x: 0, width: 208 });
-	const resize = (width: number) =>
-		setSidebarWidth(Math.min(320, Math.max(168, width)));
+	function resize(width: number) {
+		const nextWidth = clampSidebarWidth(width);
+		setAdjustedWidth(nextWidth);
+		try {
+			window.localStorage.setItem(sidebarWidthKey, String(nextWidth));
+		} catch {
+			/* Resizing still works when browser storage is unavailable. */
+		}
+	}
 	if (!isLoaded)
 		return (
 			<div className='app-shell'>
@@ -105,7 +148,7 @@ export function Shell({ children }: { children: ReactNode }) {
 					}}
 					onLostPointerCapture={() => setResizing(false)}
 					onPointerCancel={() => setResizing(false)}
-					onDoubleClick={() => setSidebarWidth(208)}
+					onDoubleClick={() => resize(defaultSidebarWidth)}
 					onKeyDown={(event) => {
 						if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key))
 							return;

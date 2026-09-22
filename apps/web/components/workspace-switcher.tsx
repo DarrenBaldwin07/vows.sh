@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { clerkError } from '@/lib/clerk-error';
 import { Dropdown } from './dropdown';
-import { InitialBadge } from './initial-badge';
+import { WorkspaceLogo } from './workspace-logo';
 import { Field, Loading, Message, Modal } from './ui';
 
 export function WorkspaceSwitcher() {
@@ -45,7 +45,7 @@ export function WorkspaceSwitcher() {
 				label='Switch workspace'
 				trigger={
 					<>
-						<InitialBadge id={organization?.id} name={organization?.name} />
+						<WorkspaceLogo organization={organization} />
 						<span className='truncate'>
 							{organization?.name ?? 'Select workspace'}
 						</span>
@@ -68,10 +68,7 @@ export function WorkspaceSwitcher() {
 									className='dropdown-item'
 									disabled={busy}
 									onClick={() => void select(m.organization.id, close)}>
-									<InitialBadge
-										id={m.organization.id}
-										name={m.organization.name}
-									/>
+									<WorkspaceLogo organization={m.organization} />
 									<span className='truncate'>{m.organization.name}</span>
 									{organization?.id === m.organization.id && (
 										<Check
@@ -101,9 +98,8 @@ export function WorkspaceSwitcher() {
 										invitation.accept()
 									)
 								}>
-								<InitialBadge
-									id={invitation.publicOrganizationData.id}
-									name={invitation.publicOrganizationData.name}
+								<WorkspaceLogo
+									organization={invitation.publicOrganizationData}
 								/>
 								<span>Join {invitation.publicOrganizationData.name}</span>
 							</button>

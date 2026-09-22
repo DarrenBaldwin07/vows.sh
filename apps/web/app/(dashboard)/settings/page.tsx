@@ -1,9 +1,16 @@
 'use client';
 import { useAuth, useOrganization, useOrganizationList } from '@clerk/nextjs';
-import { ChevronLeft, ChevronRight, MailPlus, Trash2 } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import {
+	ChevronLeft,
+	ChevronRight,
+	MailPlus,
+	Trash2,
+	Upload,
+} from 'lucide-react';
+import { useRef, useState, type FormEvent, type ChangeEvent } from 'react';
 import { Field, Loading, Message, Modal } from '@/components/ui';
 import { clerkError } from '@/lib/clerk-error';
+import { WorkspaceLogo } from '@/components/workspace-logo';
 
 export default function SettingsPage() {
 	const { orgId, orgRole } = useAuth();
@@ -32,6 +39,10 @@ function WorkspaceSettings() {
 	});
 	const { userMemberships } = useOrganizationList({ userMemberships: true });
 	const [busy, setBusy] = useState(false);
+	const logoInput = useRef<HTMLInputElement>(null);
+	const [logoAction, setLogoAction] = useState<'upload' | 'remove' | null>(
+		null
+	);
 	const [error, setError] = useState('');
 	const [message, setMessage] = useState('');
 	const [confirmation, setConfirmation] = useState<{
@@ -58,6 +69,38 @@ function WorkspaceSettings() {
 		} finally {
 			setBusy(false);
 		}
+	}
+	async function changeLogo(file: File | null) {
+		if (!organization || busy) return;
+		setLogoAction(file ? 'upload' : 'remove');
+		try {
+			await run(
+				() => organization.setLogo({ file }),
+				file ? 'Workspace logo updated.' : 'Workspace logo removed.'
+			);
+		} finally {
+			setLogoAction(null);
+		}
+	}
+	function uploadLogo(event: ChangeEvent<HTMLInputElement>) {
+		const file = event.currentTarget.files?.[0];
+		event.currentTarget.value = '';
+		if (!file || busy) return;
+		setError('');
+		setMessage('');
+		if (
+			!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(
+				file.type
+			)
+		) {
+			setError('Choose a PNG, JPG, WebP, or GIF image.');
+			return;
+		}
+		if (file.size === 0 || file.size > 10 * 1024 * 1024) {
+			setError('Choose an image between 1 byte and 10 MB.');
+			return;
+		}
+		void changeLogo(file);
 	}
 	function rename(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
@@ -90,6 +133,49 @@ function WorkspaceSettings() {
 			{message && <Message>{message}</Message>}
 			<section className='settings-section'>
 				<h2>General</h2>
+				<div className='workspace-logo-settings'>
+					<div
+						className='workspace-logo-preview'
+						aria-label='Current workspace logo'>
+						<WorkspaceLogo organization={organization} />
+					</div>
+					<div className='workspace-logo-controls'>
+						<span className='field-caption'>Workspace logo</span>
+						<div className='workspace-logo-actions'>
+							<input
+								ref={logoInput}
+								type='file'
+								accept='image/png,image/jpeg,image/webp,image/gif'
+								aria-label='Upload workspace logo'
+								hidden
+								disabled={busy}
+								onChange={uploadLogo}
+							/>
+							<button
+								type='button'
+								className='button'
+								disabled={busy}
+								onClick={() => logoInput.current?.click()}>
+								<Upload size={13} aria-hidden='true' />
+								{logoAction === 'upload'
+									? 'Uploading…'
+									: organization.hasImage
+										? 'Change logo'
+										: 'Upload logo'}
+							</button>
+							{organization.hasImage && (
+								<button
+									type='button'
+									className='button'
+									disabled={busy}
+									onClick={() => void changeLogo(null)}>
+									{logoAction === 'remove' ? 'Removing…' : 'Remove logo'}
+								</button>
+							)}
+						</div>
+						<p>PNG, JPG, WebP, or GIF. Up to 10 MB.</p>
+					</div>
+				</div>
 				<form onSubmit={rename} className='settings-name-form'>
 					<Field label='Workspace name'>
 						<input

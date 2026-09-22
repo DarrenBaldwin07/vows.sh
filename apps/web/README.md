@@ -19,6 +19,11 @@ page. Results are capped at 20 customers and 30 requests; narrow the search when
 more matches are available. Escape closes the menu; Backspace in an empty scoped
 search returns to workspace search.
 
+Workspace admins can upload, replace, or remove a logo in Settings. Logo files
+are stored by Clerk using `organization.setLogo`, and displayed in the custom
+workspace switcher. Supported uploads are PNG, JPG, WebP, and GIF up to 10 MB;
+workspaces without a logo use their colored initial badge.
+
 Clerk keys belong in the ignored `.env.local`; `.env.example` lists the names.
 All manager and share pages require authentication. Manager API calls also check
 organization membership; share API calls independently authorize a verified email.
