@@ -1,6 +1,6 @@
 # vows.sh
 
-make vows to your customers.
+the customer success agent. make vows to your customers.
 
 Vows helps you track customer requests and keep customers updated through a private
 portal where they can follow progress and see what’s been delivered. Connect
