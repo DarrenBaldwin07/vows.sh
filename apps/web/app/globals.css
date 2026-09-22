@@ -382,10 +382,7 @@ h3 {
 .customer-table-head,
 .customer-row {
 	display: grid;
-	grid-template-columns: minmax(0, 1.6fr) minmax(125px, 1fr) minmax(
-			95px,
-			0.8fr
-		) 18px;
+	grid-template-columns: minmax(0, 1.6fr) minmax(125px, 1fr) minmax(95px, 0.8fr);
 	gap: 18px;
 	align-items: center;
 }
@@ -1239,7 +1236,7 @@ h3 {
 	}
 	.customer-table-head,
 	.customer-row {
-		grid-template-columns: minmax(0, 1fr) 100px 15px;
+		grid-template-columns: minmax(0, 1fr) 100px;
 		gap: 10px;
 		padding-left: 4px;
 		padding-right: 4px;

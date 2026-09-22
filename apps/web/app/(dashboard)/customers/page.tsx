@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { Plus, ChevronRight } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { api, dateLabel, type Customer } from '@/lib/api';
 import {
 	CustomerImage,
@@ -83,7 +83,6 @@ export default function CustomersPage() {
 							<span>Customer</span>
 							<span>Open requests</span>
 							<span>Last updated</span>
-							<span />
 						</div>
 						{rows.map((c) => (
 							<Link
@@ -109,11 +108,6 @@ export default function CustomersPage() {
 									</small>
 								</div>
 								<span className='muted'>{dateLabel(c.updatedAt)}</span>
-								<ChevronRight
-									className='row-arrow'
-									size={14}
-									aria-hidden='true'
-								/>
 							</Link>
 						))}
 					</div>
