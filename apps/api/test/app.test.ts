@@ -237,17 +237,15 @@ test(
 					await call('/manage/customers', 'POST', { name: 'Search fixtures' }),
 					201
 				);
-				await db
-					.insert(request)
-					.values(
-						Array.from({ length: 32 }, (_, index) => ({
-							customerId: owner.id,
-							organizationId: org!.id,
-							title:
-								index === 0 ? '100% literal_test' : `Search fixture ${index}`,
-							createdBy: admin.userId,
-						}))
-					);
+				await db.insert(request).values(
+					Array.from({ length: 32 }, (_, index) => ({
+						customerId: owner.id,
+						organizationId: org!.id,
+						title:
+							index === 0 ? '100% literal_test' : `Search fixture ${index}`,
+						createdBy: admin.userId,
+					}))
+				);
 				const limited = await search({ customerId: owner.id });
 				assert.equal(limited.requests.length, 30);
 				assert.equal(limited.moreRequests, true);
