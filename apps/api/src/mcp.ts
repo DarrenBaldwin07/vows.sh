@@ -5,7 +5,12 @@ import type { Database } from '@repo/db';
 import { executeAgentCall, type AgentCall } from './agent-service.js';
 import type { AgentPrincipal } from './agent-keys.js';
 import type { Env } from './context.js';
-import { statuses, requestInput, requestPatchInput } from './validation.js';
+import {
+	statuses,
+	requestInput,
+	requestPatchInput,
+	customerImage,
+} from './validation.js';
 
 const id = z.string().uuid();
 const retry = {
@@ -188,6 +193,28 @@ export function createAgentMcpHandler(
 				path: `/manage/customers/${customerId}`,
 				method: 'PATCH',
 				body,
+				idempotencyKey,
+				expectedUpdatedAt,
+			})
+		);
+		tool(
+			'set_customer_image',
+			'Upload or replace the customer profile image using a base64 data URL (PNG, JPEG, or WebP, at most 256 KiB decoded). Pass null to remove it. Read the customer first for expectedUpdatedAt. Image data is omitted from results.',
+			{
+				customerId: id,
+				imageData: customerImage
+					.nullable()
+					.describe(
+						'data:image/png;base64,... (or jpeg/webp), or null to remove.'
+					),
+				...retry,
+				...version,
+			},
+			true,
+			({ customerId, imageData, idempotencyKey, expectedUpdatedAt }) => ({
+				path: `/manage/customers/${customerId}`,
+				method: 'PATCH',
+				body: { imageData },
 				idempotencyKey,
 				expectedUpdatedAt,
 			})

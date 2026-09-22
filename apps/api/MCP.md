@@ -32,11 +32,21 @@ The SDK v2 handler supports MCP 2026-07-28 and the stateless 2025-era HTTP hands
 | `search`                              | Workspace search; narrow the query when `moreCustomers` or `moreRequests` is true |
 | `list_members`                        | Valid assignee IDs and member names                                               |
 | `create_customer` / `update_customer` | Create customers or change name/domain                                            |
+| `set_customer_image`                  | Upload/replace a customer profile image, or remove it with `null`                 |
 | `create_request` / `update_request`   | Create or partially edit requests                                                 |
 | `set_request_status`                  | Change status                                                                     |
 | `assign_request`                      | Assign a member or use `null` to unassign                                         |
 
 All tool definitions are discoverable with either scope; writes enforce read/write permission at execution. Lists return `items` and `nextOffset`; pass the latter as the next `offset`, until it is `null`. Stored customer images are omitted from agent results.
+
+To upload a customer image, read `get_customer`, then call `set_customer_image` with
+`customerId`, its `expectedUpdatedAt`, a new `idempotencyKey`, and `imageData`.
+`imageData` must be a `data:image/png;base64,...`, `data:image/jpeg;base64,...`, or
+`data:image/webp;base64,...` URL containing at most 256 KiB of decoded bytes.
+Resize/compress larger files before encoding them. A local file path or remote URL
+is not accepted. Pass `imageData: null` to remove the image. This changes the
+customer's profile image shown in Vows and its portal, rather than adding an attachment.
+The response includes the updated customer/version but omits the image bytes.
 
 Every write requires `idempotencyKey`, a caller-generated string of 1–128 characters. Use a new key for each intended change and reuse the exact same arguments/key when retrying. Successful writes and their receipts commit in one transaction. Reusing a key with different arguments returns 409. Receipts are scoped to the connection and are retained until its workspace is deleted.
 

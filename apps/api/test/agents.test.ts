@@ -194,7 +194,7 @@ test(
 				try {
 					await client.connect(transport);
 					const tools = await client.listTools();
-					assert.equal(tools.tools.length, 12);
+					assert.equal(tools.tools.length, 13);
 					assert.ok(tools.tools.some((tool) => tool.name === 'assign_request'));
 					const result = await client.callTool({
 						name: 'list_customers',
@@ -210,9 +210,75 @@ test(
 					});
 					assert.ok(!made.isError, JSON.stringify(made));
 					const madeData = made.structuredContent as {
-						result: { data: { id: string } };
+						result: { data: { id: string; updatedAt: string } };
 					};
 					assert.ok(madeData.result.data.id);
+					const imageData =
+						'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+					const imageArgs = {
+						customerId: madeData.result.data.id,
+						imageData,
+						expectedUpdatedAt: madeData.result.data.updatedAt,
+						idempotencyKey: `mcp-image-${mode}`,
+					};
+					const upload = await client.callTool({
+						name: 'set_customer_image',
+						arguments: imageArgs,
+					});
+					assert.ok(!upload.isError, JSON.stringify(upload));
+					assert.ok(!JSON.stringify(upload).includes(imageData));
+					const imageRow = (
+						await db
+							.select()
+							.from(customer)
+							.where(eq(customer.id, imageArgs.customerId))
+					)[0]!;
+					assert.equal(imageRow.imageData, imageData);
+					assert.equal(imageRow.name, `MCP ${mode}`);
+					const replay = await client.callTool({
+						name: 'set_customer_image',
+						arguments: imageArgs,
+					});
+					assert.deepEqual(replay.structuredContent, upload.structuredContent);
+					const stale = await client.callTool({
+						name: 'set_customer_image',
+						arguments: {
+							...imageArgs,
+							imageData: null,
+							idempotencyKey: `mcp-image-stale-${mode}`,
+						},
+					});
+					assert.equal(stale.isError, true);
+					const invalid = await client.callTool({
+						name: 'set_customer_image',
+						arguments: {
+							...imageArgs,
+							imageData: 'data:image/png;base64,aGVsbG8=',
+							expectedUpdatedAt: imageRow.updatedAt.toISOString(),
+							idempotencyKey: `mcp-image-invalid-${mode}`,
+						},
+					});
+					assert.equal(invalid.isError, true);
+					const removed = await client.callTool({
+						name: 'set_customer_image',
+						arguments: {
+							...imageArgs,
+							imageData: null,
+							expectedUpdatedAt: imageRow.updatedAt.toISOString(),
+							idempotencyKey: `mcp-image-remove-${mode}`,
+						},
+					});
+					assert.ok(!removed.isError, JSON.stringify(removed));
+					assert.equal(
+						(
+							await db
+								.select()
+								.from(customer)
+								.where(eq(customer.id, imageArgs.customerId))
+						)[0]!.imageData,
+						null
+					);
+
 					const madeRequest = await client.callTool({
 						name: 'create_request',
 						arguments: {
@@ -402,7 +468,7 @@ test(
 				.select()
 				.from(agentOperation)
 				.where(eq(agentOperation.principalId, actor.id));
-			assert.equal(ops.length, 10);
+			assert.equal(ops.length, 14);
 			assert.equal(
 				(
 					await manage(

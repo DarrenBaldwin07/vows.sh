@@ -7,7 +7,7 @@ export const statuses = [
 	'done',
 	'canceled',
 ] as const;
-const customerImage = z
+export const customerImage = z
 	.string()
 	.max(350000)
 	.refine((value) => {
