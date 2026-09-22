@@ -3,7 +3,21 @@ import { Pool } from 'pg';
 import { getDatabaseUrl } from './env.js';
 import * as schema from './schema.js';
 
-export { greetings } from './schema.js';
+export * from './schema.js';
+export {
+	and,
+	eq,
+	desc,
+	asc,
+	isNull,
+	inArray,
+	sql,
+	count,
+	ne,
+	or,
+	lte,
+} from 'drizzle-orm';
+export type Database = ReturnType<typeof getDb>;
 
 function createDatabase() {
 	const pool = new Pool({

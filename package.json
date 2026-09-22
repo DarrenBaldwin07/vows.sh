@@ -14,7 +14,8 @@
 		"db:seed": "pnpm --filter @repo/db db:seed",
 		"db:studio": "pnpm --filter @repo/db db:studio",
 		"format:check": "oxfmt --check .",
-		"lint:ox": "oxlint --deny-warnings ."
+		"lint:ox": "oxlint --deny-warnings .",
+		"test": "pnpm --filter @repo/db build && pnpm --filter @repo/api test"
 	},
 	"devDependencies": {
 		"oxfmt": "0.68.0",

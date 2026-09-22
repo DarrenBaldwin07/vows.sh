@@ -1,21 +1,32 @@
-# API
+# Vows API and notification worker
 
-First follow the root README to start Postgres, apply migrations, and seed the
-example greeting (`pnpm db:up`, `pnpm db:migrate`, `pnpm db:seed`).
-Run `pnpm dev` from the repository root to start all apps. The API listens at
-http://localhost:3002 and `GET /hello` reads from `@repo/db` and returns
-`{ "message": "Hello world!" }`. An unseeded database returns 404.
-The web app at http://localhost:3000 calls it using Hono RPC and TanStack Query.
+Hono routes live in `src/app.ts` and are mounted by
+`apps/web/app/api/[[...route]]/route.ts`. The Next.js adapter verifies Clerk sessions
+and supplies identity via server-side Hono bindings. Never populate these bindings
+from request headers or request bodies. Manager routes require an active Clerk
+organization; customer routes check verified email access independently.
 
-`@repo/api` exports the `AppType` type for RPC clients; import it with `import type`
-so server code never enters the browser bundle.
+The API accepts same-origin JSON mutations. Manager requests include an expected
+Clerk organization ID so a change of active workspace cannot silently redirect
+an in-flight mutation to a different organization.
 
-Optional environment variables: `PORT` (default `3002`), `WEB_ORIGIN` (default
-`http://localhost:3000`), and `NEXT_PUBLIC_API_URL` in the web app (default
-`http://localhost:3002`). Export API variables in your shell; Next.js also supports
-`apps/web/.env.local`. Set the public API URL before building the web app.
+- `/api/manage/customers`: customer list and creation.
+- `/api/manage/customers/:id`: customer detail, settings, and archive state.
+- `/api/manage/customers/:id/requests`: request creation.
+- `/api/manage/customers/:id/sharing`: share-link management (admin).
+- `/api/manage/customers/:id/access`: customer email access (admin).
+- `/api/manage/requests/:id`: request detail and edits.
+- `/api/manage/requests/:id/status`: status transitions.
+- `/api/manage/requests/:id/notify`: explicit notification resend.
+- `/api/manage/integrations`: sanitized connection status.
+- `/api/manage/slack/connect` and `/callback`: Slack OAuth (admin).
+- `/api/portal/:token`: authenticated, read-only customer projection.
 
-The database package loads `DATABASE_URL` from the root `.env` or the environment.
-Build with `pnpm exec turbo run build --filter=@repo/api`, then run
-`pnpm --filter @repo/api start`.
-Use Node 24+ as required by the workspace.
+`src/worker.ts` delivers transactional outbox jobs. `pnpm --filter @repo/api dev`
+runs the worker with file watching; `pnpm --filter @repo/api start` runs its build.
+The worker runs automatically in root `pnpm dev` and must run alongside the web
+app in production. See the root README for environment and Slack configuration.
+
+Tests use `tsx --test`. Set `TEST_DATABASE_URL` to an already-migrated test database
+to include API, authorization, and notification lifecycle tests. No live Slack
+messages are sent by the tests.

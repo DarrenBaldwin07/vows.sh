@@ -29,3 +29,36 @@ jobs:
         run: pnpm format:check
       - name: Lint with Oxlint
         run: pnpm lint
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: company
+          POSTGRES_PASSWORD: company_test
+          POSTGRES_DB: vows_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U company -d vows_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://company:company_test@localhost:5432/vows_test
+      TEST_DATABASE_URL: postgresql://company:company_test@localhost:5432/vows_test
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm test
+      - run: pnpm check-types

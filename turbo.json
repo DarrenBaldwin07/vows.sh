@@ -20,6 +20,14 @@
 			"dependsOn": ["^build"]
 		}
 	},
-	"globalEnv": ["NEXT_PUBLIC_API_URL", "WEB_ORIGIN", "PORT", "DATABASE_URL"],
+	"globalEnv": [
+		"DATABASE_URL",
+		"APP_URL",
+		"CLERK_SECRET_KEY",
+		"NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+		"SLACK_CLIENT_ID",
+		"SLACK_CLIENT_SECRET",
+		"INTEGRATION_ENCRYPTION_KEY"
+	],
 	"globalDependencies": [".env"]
 }

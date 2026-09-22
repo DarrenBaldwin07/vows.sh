@@ -4,7 +4,7 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"dev": "next dev --port 3000",
+		"dev": "next dev --port 3100",
 		"build": "next build",
 		"start": "next start",
 		"lint": "oxlint --config ../../.oxlintrc.json --deny-warnings .",
@@ -17,7 +17,9 @@
 		"@repo/db": "workspace:*",
 		"@repo/ui": "workspace:*",
 		"@tanstack/react-query": "^5.103.1",
+		"cmdk": "^1.1.1",
 		"hono": "^4.13.8",
+		"lucide-react": "^1.47.0",
 		"next": "16.3.4",
 		"react": "19.2.8",
 		"react-dom": "19.2.8"
