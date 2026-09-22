@@ -108,6 +108,7 @@ h3 {
 	background: #fafafa;
 }
 .sidebar {
+	--sidebar-item-padding: 8px;
 	position: sticky;
 	top: 0;
 	height: 100svh;
@@ -128,14 +129,31 @@ h3 {
 	min-height: 0;
 }
 .sidebar > .workspace-switcher > .dropdown > .dropdown-trigger {
-	padding-inline: 4px;
+	width: 100%;
+	padding-inline: var(--sidebar-item-padding);
+	gap: 8px;
+}
+.sidebar
+	> .workspace-switcher
+	> .dropdown
+	> .dropdown-trigger
+	> .workspace-logo,
+.sidebar
+	> .workspace-switcher
+	> .dropdown
+	> .dropdown-trigger
+	> .initial-badge {
+	width: 22px;
+	height: 22px;
+	border-radius: var(--radius);
+	font-size: 12px;
 }
 
 .nav-item {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	padding: 5px 8px;
+	padding: 5px var(--sidebar-item-padding, 8px);
 	border-radius: var(--radius);
 	margin-bottom: 2px;
 	color: #525252;
