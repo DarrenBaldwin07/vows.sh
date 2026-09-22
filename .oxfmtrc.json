@@ -1,0 +1,22 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"trailingComma": "es5",
+	"tabWidth": 2,
+	"semi": true,
+	"jsxSingleQuote": true,
+	"singleQuote": true,
+	"bracketSameLine": true,
+	"bracketSpacing": true,
+	"useTabs": true,
+	"sortPackageJson": false,
+	"sortTailwindcss": null,
+	"printWidth": 80,
+	"overrides": [
+		{
+			"files": ["apps/litellm/*.json"],
+			"options": {
+				"useTabs": false
+			}
+		}
+	]
+}

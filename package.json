@@ -1,0 +1,29 @@
+{
+	"name": "company",
+	"private": true,
+	"scripts": {
+		"build": "turbo run build",
+		"dev": "turbo run dev",
+		"lint": "oxlint --deny-warnings .",
+		"format": "oxfmt --write .",
+		"check-types": "turbo run check-types",
+		"db:up": "docker compose up -d --wait postgres",
+		"db:down": "docker compose down",
+		"db:generate": "pnpm --filter @repo/db db:generate",
+		"db:migrate": "pnpm --filter @repo/db db:migrate",
+		"db:seed": "pnpm --filter @repo/db db:seed",
+		"db:studio": "pnpm --filter @repo/db db:studio",
+		"format:check": "oxfmt --check .",
+		"lint:ox": "oxlint --deny-warnings ."
+	},
+	"devDependencies": {
+		"oxfmt": "0.68.0",
+		"oxlint": "1.83.0",
+		"turbo": "^2.11.2",
+		"typescript": "7.0.2"
+	},
+	"packageManager": "pnpm@11.25.0",
+	"engines": {
+		"node": ">=24"
+	}
+}

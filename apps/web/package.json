@@ -1,0 +1,36 @@
+{
+	"name": "web",
+	"version": "0.1.0",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"dev": "next dev --port 3000",
+		"build": "next build",
+		"start": "next start",
+		"lint": "oxlint --config ../../.oxlintrc.json --deny-warnings .",
+		"check-types": "next typegen && tsc --noEmit"
+	},
+	"dependencies": {
+		"@clerk/nextjs": "^7.9.4",
+		"@clerk/ui": "^1.33.1",
+		"@repo/api": "workspace:*",
+		"@repo/db": "workspace:*",
+		"@repo/ui": "workspace:*",
+		"@tanstack/react-query": "^5.103.1",
+		"hono": "^4.13.8",
+		"next": "16.3.4",
+		"react": "19.2.8",
+		"react-dom": "19.2.8"
+	},
+	"devDependencies": {
+		"@repo/typescript-config": "workspace:*",
+		"@tailwindcss/postcss": "4.3.3",
+		"@types/node": "26.4.1",
+		"@types/react": "19.2.18",
+		"@types/react-dom": "19.2.5",
+		"oxlint": "1.83.0",
+		"postcss": "^8.5.28",
+		"tailwindcss": "4.3.3",
+		"typescript": "7.0.2"
+	}
+}

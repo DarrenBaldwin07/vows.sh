@@ -1,0 +1,30 @@
+{
+	"name": "@repo/api",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./src/app.ts"
+		}
+	},
+	"scripts": {
+		"dev": "tsx watch src/index.ts",
+		"build": "tsc",
+		"start": "node dist/index.js",
+		"check-types": "tsc --noEmit",
+		"lint": "oxlint --config ../../.oxlintrc.json --deny-warnings ."
+	},
+	"devDependencies": {
+		"@repo/typescript-config": "workspace:*",
+		"@types/node": "26.4.1",
+		"tsx": "^4.23.13",
+		"typescript": "7.0.2",
+		"oxlint": "1.83.0"
+	},
+	"dependencies": {
+		"@hono/node-server": "^2.1.1",
+		"hono": "^4.13.8",
+		"@repo/db": "workspace:*"
+	}
+}
