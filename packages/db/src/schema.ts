@@ -4,6 +4,7 @@ import {
 	foreignKey,
 	index,
 	integer,
+	jsonb,
 	pgEnum,
 	pgTable,
 	text,
@@ -49,6 +50,7 @@ export const customer = pgTable(
 			.references(() => organization.id, { onDelete: 'cascade' }),
 		name: text('name').notNull(),
 		domain: text('domain'),
+		imageData: text('imageData'),
 		archivedAt: date('archivedAt'),
 		createdAt: createdAt(),
 		updatedAt: createdAt('updatedAt'),
@@ -200,5 +202,46 @@ export const notificationDelivery = pgTable(
 	(t) => [
 		unique().on(t.eventId, t.threadId),
 		index().on(t.status, t.nextAttemptAt),
+	]
+);
+
+export const agentKey = pgTable(
+	'AgentKey',
+	{
+		id: id(),
+		organizationId: text('organizationId')
+			.notNull()
+			.references(() => organization.id, { onDelete: 'cascade' }),
+		userId: text('userId').notNull(),
+		name: text('name').notNull(),
+		prefix: text('prefix').notNull(),
+		tokenHash: text('tokenHash').notNull().unique(),
+		permission: text('permission', { enum: ['read', 'write'] }).notNull(),
+		createdAt: createdAt(),
+		expiresAt: timestamp('expiresAt', { withTimezone: true }).notNull(),
+		revokedAt: date('revokedAt'),
+		lastUsedAt: date('lastUsedAt'),
+	},
+	(t) => [index().on(t.organizationId)]
+);
+
+export const agentOperation = pgTable(
+	'AgentOperation',
+	{
+		id: id(),
+		organizationId: text('organizationId')
+			.notNull()
+			.references(() => organization.id, { onDelete: 'cascade' }),
+		principalId: text('principalId').notNull(),
+		userId: text('userId').notNull(),
+		operation: text('operation').notNull(),
+		idempotencyKey: text('idempotencyKey').notNull(),
+		inputHash: text('inputHash').notNull(),
+		result: jsonb('result').notNull(),
+		createdAt: createdAt(),
+	},
+	(t) => [
+		unique().on(t.principalId, t.idempotencyKey),
+		index().on(t.organizationId, t.createdAt),
 	]
 );

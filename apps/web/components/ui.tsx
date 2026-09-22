@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, type ReactNode } from 'react';
 import {
-	Circle,
+	Eye,
 	CircleDashed,
 	CircleDot,
 	CircleCheck,
@@ -12,15 +12,22 @@ import {
 import { statusLabels, type Status } from '@/lib/api';
 
 const statusIcons = {
-	todo: Circle,
+	todo: CircleDashed,
 	in_progress: CircleDot,
-	in_review: CircleDashed,
+	in_review: Eye,
 	done: CircleCheck,
 	canceled: CircleX,
 };
 export function StatusIcon({ status }: { status: Status }) {
 	const Icon = statusIcons[status];
-	return <Icon size={13} strokeWidth={1.7} aria-hidden='true' />;
+	return (
+		<Icon
+			className={`status-icon status-${status}`}
+			size={14}
+			strokeWidth={1.8}
+			aria-hidden='true'
+		/>
+	);
 }
 export function StatusBadge({ status }: { status: Status }) {
 	return (

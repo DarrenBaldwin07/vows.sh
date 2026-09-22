@@ -1,6 +1,12 @@
 'use client';
 import { useAuth } from '@clerk/nextjs';
-import { Users, Plug, Settings } from 'lucide-react';
+import { Users, Plug, Settings, ScrollText, Map } from 'lucide-react';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from '@repo/ui/components/tooltip';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -97,20 +103,41 @@ export function Shell({ children }: { children: ReactNode }) {
 				</div>
 				<nav aria-label='Workspace navigation'>
 					<CommandMenu key={orgId} />
-					{[
-						{ href: '/customers', icon: Users, label: 'Customers' },
-						{ href: '/integrations', icon: Plug, label: 'Integrations' },
-						{ href: '/settings', icon: Settings, label: 'Settings' },
-					].map(({ href, icon: Icon, label }) => (
-						<Link
-							key={href}
-							className={`nav-item ${pathname.startsWith(href) ? 'active' : ''}`}
-							aria-current={pathname.startsWith(href) ? 'page' : undefined}
-							href={href}>
-							<Icon size={15} strokeWidth={1.7} aria-hidden='true' />
-							{label}
-						</Link>
-					))}
+					<TooltipProvider delayDuration={250}>
+						{[
+							{ href: '/customers', icon: Users, label: 'Customers' },
+							{ icon: ScrollText, label: 'Changelog' },
+							{ icon: Map, label: 'Roadmap' },
+							{ href: '/integrations', icon: Plug, label: 'Integrations' },
+							{ href: '/settings', icon: Settings, label: 'Settings' },
+						].map(({ href, icon: Icon, label }) =>
+							href ? (
+								<Link
+									key={href}
+									className={`nav-item ${pathname.startsWith(href) ? 'active' : ''}`}
+									aria-current={pathname.startsWith(href) ? 'page' : undefined}
+									href={href}>
+									<Icon size={15} strokeWidth={1.7} aria-hidden='true' />
+									{label}
+								</Link>
+							) : (
+								<Tooltip key={label}>
+									<TooltipTrigger asChild>
+										<button
+											type='button'
+											className='nav-item w-full text-left max-[720px]:w-auto'
+											aria-disabled='true'>
+											<Icon size={15} strokeWidth={1.7} aria-hidden='true' />
+											{label}
+										</button>
+									</TooltipTrigger>
+									<TooltipContent side='right' sideOffset={2}>
+										Coming soon
+									</TooltipContent>
+								</Tooltip>
+							)
+						)}
+					</TooltipProvider>
 				</nav>
 				<div className='sidebar-bottom'>
 					<AccountMenu upward />

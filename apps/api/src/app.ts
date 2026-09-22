@@ -1,3 +1,4 @@
+import { agentKeyRoutes } from './agent-keys.js';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
@@ -11,6 +12,7 @@ import {
 	or,
 	sql,
 	customer,
+	organization,
 	customerAccess,
 	customerShareLink,
 	request,
@@ -127,7 +129,9 @@ async function saveRequest(
 		const values = {
 			...fields,
 			status,
-			updatedAt: new Date(),
+			updatedAt: new Date(
+				Math.max(Date.now(), (existing?.updatedAt.getTime() ?? 0) + 1)
+			),
 			completedAt:
 				status === 'done' ? (existing?.completedAt ?? new Date()) : null,
 		};
@@ -344,8 +348,14 @@ export function createApp(database: () => Database = getDb) {
 			);
 		const [owner] = await c
 			.get('db')
-			.select({ name: customer.name, archivedAt: customer.archivedAt })
+			.select({
+				name: customer.name,
+				imageData: customer.imageData,
+				archivedAt: customer.archivedAt,
+				clerkOrganizationId: organization.clerkOrganizationId,
+			})
 			.from(customer)
+			.innerJoin(organization, eq(customer.organizationId, organization.id))
 			.where(eq(customer.id, link.customerId));
 		if (!owner || owner.archivedAt)
 			throw new HTTPException(404, { message: 'This portal is unavailable.' });
@@ -359,16 +369,43 @@ export function createApp(database: () => Database = getDb) {
 				updatedAt: request.updatedAt,
 				completedAt: request.completedAt,
 				completionNote: request.completionNote,
+				assigneeId: request.assigneeId,
 			})
 			.from(request)
 			.where(eq(request.customerId, link.customerId))
 			.orderBy(desc(request.updatedAt));
-		return c.json({ customer: { name: owner.name }, requests: rows });
+		const assigneeIds = [
+			...new Set(
+				rows.flatMap((row) => (row.assigneeId ? [row.assigneeId] : []))
+			),
+		];
+		const assignees = assigneeIds.length
+			? ((await c.env.portalAssignees?.(
+					owner.clerkOrganizationId,
+					assigneeIds
+				)) ?? [])
+			: [];
+		const assigneeById = new Map(
+			assignees.map(({ id, name, imageUrl }) => [id, { name, imageUrl }])
+		);
+		const workspace =
+			(await c.env
+				.workspaceBranding?.(owner.clerkOrganizationId)
+				.catch(() => null)) ?? null;
+		return c.json({
+			customer: { name: owner.name, imageData: owner.imageData },
+			workspace,
+			requests: rows.map(({ assigneeId, ...row }) => ({
+				...row,
+				assignee: assigneeId ? (assigneeById.get(assigneeId) ?? null) : null,
+			})),
+		});
 	});
 	app.use('/manage/*', async (c, next) => {
 		await ensureOrganization(c);
 		await next();
 	});
+	app.route('/manage/agent-keys', agentKeyRoutes);
 	app.get('/manage/search', async (c) => {
 		const input = z
 			.object({
@@ -393,6 +430,7 @@ export function createApp(database: () => Database = getDb) {
 							id: customer.id,
 							name: customer.name,
 							domain: customer.domain,
+							imageData: customer.imageData,
 							archivedAt: customer.archivedAt,
 						})
 						.from(customer)
@@ -457,6 +495,7 @@ export function createApp(database: () => Database = getDb) {
 				id: customer.id,
 				name: customer.name,
 				domain: customer.domain,
+				imageData: customer.imageData,
 				archivedAt: customer.archivedAt,
 				updatedAt: customer.updatedAt,
 				openCount: sql<number>`(count(${request.id}) filter (where ${request.status} not in ('done', 'canceled')))::int`,

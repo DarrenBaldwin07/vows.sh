@@ -7,9 +7,31 @@ export const statuses = [
 	'done',
 	'canceled',
 ] as const;
+const customerImage = z
+	.string()
+	.max(350000)
+	.refine((value) => {
+		const match =
+			/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(value);
+		if (!match) return false;
+		const bytes = Buffer.from(match[2]!, 'base64');
+		if (bytes.length > 256 * 1024 || bytes.toString('base64') !== match[2])
+			return false;
+		if (match[1] === 'png')
+			return bytes
+				.subarray(0, 8)
+				.equals(Buffer.from('89504e470d0a1a0a', 'hex'));
+		if (match[1] === 'jpeg')
+			return bytes.subarray(0, 3).equals(Buffer.from('ffd8ff', 'hex'));
+		return (
+			bytes.toString('ascii', 0, 4) === 'RIFF' &&
+			bytes.toString('ascii', 8, 12) === 'WEBP'
+		);
+	}, 'Use a PNG, JPEG, or WebP image under 256 KB.');
 export const customerInput = z.object({
 	name: z.string().trim().min(1).max(160),
 	domain: z.string().trim().max(253).nullable().optional(),
+	imageData: customerImage.nullable().optional(),
 });
 export const requestInput = z.object({
 	title: z.string().trim().min(1).max(240),
@@ -21,6 +43,20 @@ export const requestInput = z.object({
 	notifyOnDone: z.boolean().nullable().default(null),
 	slackUrl: z.string().max(2000).nullable().default(null),
 });
+export const requestPatchInput = z
+	.object({
+		title: requestInput.shape.title.optional(),
+		description: requestInput.shape.description.removeDefault().optional(),
+		internalNotes: requestInput.shape.internalNotes.removeDefault().optional(),
+		status: requestInput.shape.status.removeDefault().optional(),
+		assigneeId: requestInput.shape.assigneeId.removeDefault().optional(),
+		completionNote: requestInput.shape.completionNote
+			.removeDefault()
+			.optional(),
+		notifyOnDone: requestInput.shape.notifyOnDone.removeDefault().optional(),
+		slackUrl: requestInput.shape.slackUrl.removeDefault().optional(),
+	})
+	.strict();
 export const accessInput = z.object({
 	email: z.email().trim().toLowerCase().max(320),
 });

@@ -84,6 +84,7 @@ export type Customer = {
 	id: string;
 	name: string;
 	domain: string | null;
+	imageData: string | null;
 	archivedAt: string | null;
 	updatedAt: string;
 	openCount?: number;

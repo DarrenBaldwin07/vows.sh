@@ -10,6 +10,7 @@ import {
 import { useRef, useState, type FormEvent, type ChangeEvent } from 'react';
 import { Field, Loading, Message, Modal } from '@/components/ui';
 import { clerkError } from '@/lib/clerk-error';
+import { AgentConnections } from '@/components/agent-connections';
 import { WorkspaceLogo } from '@/components/workspace-logo';
 
 export default function SettingsPage() {
@@ -27,6 +28,9 @@ export default function SettingsPage() {
 						Only admins can manage workspace settings and members.
 					</Message>
 				)}
+				<div className='settings-content'>
+					<AgentConnections key={orgId} />
+				</div>
 			</div>
 		</>
 	);

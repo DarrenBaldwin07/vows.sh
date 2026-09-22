@@ -1,11 +1,17 @@
 'use client';
+import Image from 'next/image';
+import { useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import { ChevronDown } from 'lucide-react';
+import { CustomerImage } from './customer-image';
+import { WorkspaceLogo } from './workspace-logo';
 import { AccountMenu } from './account-menu';
 import { useQuery } from '@tanstack/react-query';
 import { api, dateLabel, statuses, statusLabels, type Status } from '@/lib/api';
-import { EmptyState, Loading, Message, StatusBadge } from './ui';
+import { EmptyState, Loading, Message, StatusIcon } from './ui';
 type Portal = {
-	customer: { name: string };
+	customer: { name: string; imageData: string | null };
+	workspace: { name: string; imageUrl: string; hasImage: boolean } | null;
 	requests: {
 		id: string;
 		title: string;
@@ -13,6 +19,7 @@ type Portal = {
 		status: Status;
 		updatedAt: string;
 		completionNote: string;
+		assignee: { name: string; imageUrl: string | null } | null;
 	}[];
 };
 export function CustomerPortal({ token }: { token: string }) {
@@ -28,7 +35,23 @@ export function CustomerPortal({ token }: { token: string }) {
 	return (
 		<div className='portal'>
 			<header className='portal-header'>
-				<span>Customer portal</span>
+				<div className='portal-brand'>
+					{query.data?.workspace ? (
+						<WorkspaceLogo
+							organization={{ ...query.data.workspace, id: token }}
+							showLoadingSkeleton
+						/>
+					) : query.isPending ? (
+						<span
+							className='workspace-logo-frame skeleton'
+							aria-hidden='true'
+						/>
+					) : null}
+					<div>
+						<strong>{query.data?.workspace?.name ?? 'Customer portal'}</strong>
+						{query.data?.workspace && <span>Customer portal</span>}
+					</div>
+				</div>
 				<div>
 					<AccountMenu />
 				</div>
@@ -42,8 +65,19 @@ export function CustomerPortal({ token }: { token: string }) {
 					</EmptyState>
 				) : (
 					<>
-						<h1>{query.data.customer.name}</h1>
-						<p className='portal-intro'>Requests and status updates.</p>
+						<p className='portal-eyebrow'>Your customer space</p>
+						<div className='portal-customer-heading'>
+							{query.data.customer.imageData && (
+								<CustomerImage
+									name={query.data.customer.name}
+									imageData={query.data.customer.imageData}
+								/>
+							)}
+							<h1>{query.data.customer.name}</h1>
+						</div>
+						<p className='portal-intro'>
+							A shared view of your requests, progress, and updates.
+						</p>
 						<div className='portal-summary'>
 							<span>
 								<strong>
@@ -74,14 +108,29 @@ export function CustomerPortal({ token }: { token: string }) {
 								return (
 									rows.length > 0 && (
 										<section key={status} className='portal-group'>
-											<h2>
+											<h2 className={`status-${status}`}>
 												{statusLabels[status]} <span>{rows.length}</span>
 											</h2>
 											{rows.map((row) => (
 												<details className='portal-request' key={row.id}>
 													<summary>
-														<span>{row.title}</span>
-														<StatusBadge status={row.status} />
+														<span
+															className='portal-status-icon'
+															title={statusLabels[row.status]}>
+															<StatusIcon status={row.status} />
+															<span className='sr-only'>
+																{statusLabels[row.status]}
+															</span>
+														</span>
+														<span className='portal-request-title'>
+															<span>{row.title}</span>
+															<ChevronDown
+																className='portal-request-chevron'
+																size={14}
+																aria-hidden='true'
+															/>
+														</span>
+														<PortalAssignee assignee={row.assignee} />
 													</summary>
 													<div className='portal-request-body'>
 														<p>
@@ -113,5 +162,36 @@ export function CustomerPortal({ token }: { token: string }) {
 				)}
 			</main>
 		</div>
+	);
+}
+
+function PortalAssignee({
+	assignee,
+}: {
+	assignee: Portal['requests'][number]['assignee'];
+}) {
+	const [failedUrl, setFailedUrl] = useState<string | null>(null);
+	return (
+		<span
+			className='portal-assignee'
+			title={assignee ? `Assigned to ${assignee.name}` : 'Unassigned'}>
+			{assignee?.imageUrl && failedUrl !== assignee.imageUrl ? (
+				<Image
+					src={assignee.imageUrl}
+					alt=''
+					width={22}
+					height={22}
+					unoptimized
+					onError={() => setFailedUrl(assignee.imageUrl)}
+				/>
+			) : (
+				<span className='portal-assignee-avatar' aria-hidden='true'>
+					{assignee ? Array.from(assignee.name)[0]?.toUpperCase() : '–'}
+				</span>
+			)}
+			<span className='portal-assignee-name'>
+				{assignee?.name ?? 'Unassigned'}
+			</span>
+		</span>
 	);
 }

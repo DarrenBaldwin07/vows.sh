@@ -9,7 +9,17 @@ export type Identity = {
 	verifiedEmails: string[];
 };
 export type Env = {
-	Bindings: { identity?: Identity; members?: () => Promise<Member[]> };
+	Bindings: {
+		identity?: Identity;
+		members?: () => Promise<Member[]>;
+		portalAssignees?: (
+			organizationId: string,
+			userIds: string[]
+		) => Promise<{ id: string; name: string; imageUrl: string | null }[]>;
+		workspaceBranding?: (
+			organizationId: string
+		) => Promise<{ name: string; imageUrl: string; hasImage: boolean }>;
+	};
 	Variables: { db: Database; organizationId: string };
 };
 export type ApiContext = Context<Env>;

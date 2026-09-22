@@ -2,7 +2,14 @@
 import { Suspense, use, useState, type FormEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Link2, ChevronRight } from 'lucide-react';
+import { Plus, Link2, ChevronRight, Settings } from 'lucide-react';
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+} from '@repo/ui/components/select';
 import { useAuth } from '@clerk/nextjs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -23,7 +30,10 @@ import {
 	StatusIcon,
 } from '@/components/ui';
 import { SharingDialog } from '@/components/sharing';
-import { InitialBadge } from '@/components/initial-badge';
+import {
+	CustomerImage,
+	CustomerImageUpload,
+} from '@/components/customer-image';
 import { RequestEditor } from '@/components/request-editor';
 
 export default function CustomerPage({
@@ -65,6 +75,7 @@ function CustomerContent({
 		initialRequest
 	);
 	const [search, setSearch] = useState('');
+	const [imageProcessing, setImageProcessing] = useState(false);
 	const query = useQuery({
 		queryKey: ['customer', orgId, id],
 		queryFn: ({ signal }) =>
@@ -119,6 +130,7 @@ function CustomerContent({
 		update.mutate({
 			name: form.get('name'),
 			domain: form.get('domain') || null,
+			imageData: form.get('imageData') || null,
 		});
 	}
 	return (
@@ -136,18 +148,24 @@ function CustomerContent({
 						className='breadcrumb-current'
 						aria-current='page'
 						title={customer.name}>
-						<InitialBadge id={customer.id} name={customer.name} />
+						<CustomerImage
+							id={customer.id}
+							name={customer.name}
+							imageData={customer.imageData}
+						/>
 						<span className='truncate'>{customer.name}</span>
 					</span>
 				</h1>
 				<div className='heading-actions'>
 					<button
-						className='text-button'
+						className='button icon-button'
+						aria-label='Customer settings'
+						title='Customer settings'
 						onClick={() => {
 							update.reset();
 							setSettings(true);
 						}}>
-						Customer settings
+						<Settings size={14} aria-hidden='true' />
 					</button>
 					{orgRole === 'org:admin' && (
 						<button className='button' onClick={() => setSharing(true)}>
@@ -162,7 +180,7 @@ function CustomerContent({
 					</button>
 				</div>
 			</div>
-			<div className='page-content'>
+			<div className='page-content requests-page'>
 				{initialRequest &&
 					!requests.some((request) => request.id === initialRequest) && (
 						<Message error>
@@ -201,40 +219,62 @@ function CustomerContent({
 								group.length > 0 && (
 									<section className='request-group' key={s}>
 										<div className={`group-heading status-${s}`}>
-											<StatusIcon status={s} />
 											{statusLabels[s]}
 											<span className='group-count'>{group.length}</span>
 										</div>
 										{group.map((r) => (
 											<div className='request-row' key={r.id}>
-												<select
-													aria-label={`Status for ${r.title}`}
-													className={`inline-status status-${r.status}`}
+												<Select
 													value={r.status}
 													disabled={
 														status.isPending || Boolean(customer.archivedAt)
 													}
-													onChange={(e) =>
+													onValueChange={(value) =>
 														status.mutate({
 															requestId: r.id,
-															value: e.target.value as Status,
+															value: value as Status,
 														})
 													}>
-													{statuses.map((option) => (
-														<option key={option} value={option}>
-															{statusLabels[option]}
-														</option>
-													))}
-												</select>
+													<SelectTrigger
+														size='sm'
+														className={`request-status-control status-${r.status}`}
+														aria-label={`Status for ${r.title}: ${statusLabels[r.status]}`}
+														title={statusLabels[r.status]}>
+														<span>
+															<StatusIcon status={r.status} />
+														</span>
+													</SelectTrigger>
+													<SelectContent
+														position='popper'
+														align='start'
+														className='request-status-menu'>
+														<SelectGroup>
+															{statuses.map((option) => (
+																<SelectItem
+																	key={option}
+																	value={option}
+																	textValue={statusLabels[option]}
+																	className={`status-${option}`}>
+																	<StatusIcon status={option} />
+																	{statusLabels[option]}
+																</SelectItem>
+															))}
+														</SelectGroup>
+													</SelectContent>
+												</Select>
 												<button
 													className='request-title-button'
 													onClick={() => setEditor(r.id)}>
-													<strong>{r.title}</strong>
+													<strong title={r.title}>{r.title}</strong>
 													{r.description && <span>{r.description}</span>}
 												</button>
-												<time>{dateLabel(r.updatedAt)}</time>
+												<time
+													dateTime={r.updatedAt}
+													title={`Updated ${dateLabel(r.updatedAt)}`}>
+													{dateLabel(r.updatedAt)}
+												</time>
 												<button
-													className='icon-button'
+													className='icon-button request-open'
 													aria-label={`Open ${r.title}`}
 													onClick={() => setEditor(r.id)}>
 													<ChevronRight size={14} aria-hidden='true' />
@@ -289,6 +329,11 @@ function CustomerContent({
 			{settings && (
 				<Modal title='Customer settings' onClose={() => setSettings(false)}>
 					<form className='form-stack' onSubmit={saveCustomer}>
+						<CustomerImageUpload
+							defaultValue={customer.imageData}
+							name={customer.name}
+							onProcessingChange={setImageProcessing}
+						/>
 						<Field label='Customer name'>
 							<input
 								name='name'
@@ -315,7 +360,9 @@ function CustomerContent({
 								}>
 								{customer.archivedAt ? 'Restore customer' : 'Archive customer'}
 							</button>
-							<button className='button primary' disabled={update.isPending}>
+							<button
+								className='button primary'
+								disabled={update.isPending || imageProcessing}>
 								Save changes
 							</button>
 						</div>

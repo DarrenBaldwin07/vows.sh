@@ -4,6 +4,7 @@ import {
 	parseSlackLink,
 	shouldNotify,
 	requestInput,
+	customerInput,
 } from '../src/validation.js';
 import { decrypt, encrypt, SlackError, slackCall } from '../src/slack.js';
 
@@ -92,5 +93,29 @@ test('Slack rate limits are retryable, network failures are uncertain', async ()
 		);
 	} finally {
 		globalThis.fetch = original;
+	}
+});
+
+test('customer images accept bounded raster data and reject URLs, SVG, invalid bytes and oversized payloads', () => {
+	const imageData =
+		'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aA1sAAAAASUVORK5CYII=';
+	assert.equal(
+		customerInput.parse({ name: 'Acme', imageData }).imageData,
+		imageData
+	);
+	assert.equal(
+		customerInput.parse({ name: 'Acme', imageData: null }).imageData,
+		null
+	);
+	for (const value of [
+		'https://example.com/image.png',
+		'data:image/svg+xml;base64,PHN2Zz4=',
+		'data:image/png;base64,aGVsbG8=',
+		'data:image/png;base64,' + 'A'.repeat(350000),
+	]) {
+		assert.equal(
+			customerInput.safeParse({ name: 'Acme', imageData: value }).success,
+			false
+		);
 	}
 });

@@ -5,12 +5,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Plus, ChevronRight } from 'lucide-react';
 import { api, dateLabel, type Customer } from '@/lib/api';
+import {
+	CustomerImage,
+	CustomerImageUpload,
+} from '@/components/customer-image';
 import { EmptyState, Field, Loading, Message, Modal } from '@/components/ui';
 
 export default function CustomersPage() {
 	const { orgId } = useAuth();
 	const cache = useQueryClient();
 	const [search, setSearch] = useState('');
+	const [imageProcessing, setImageProcessing] = useState(false);
 	const [creating, setCreating] = useState(false);
 	const query = useQuery({
 		queryKey: ['customers', orgId],
@@ -40,6 +45,7 @@ export default function CustomersPage() {
 		create.mutate({
 			name: data.get('name'),
 			domain: data.get('domain') || null,
+			imageData: data.get('imageData') || null,
 		});
 	}
 	return (
@@ -47,12 +53,14 @@ export default function CustomersPage() {
 			<div className='topbar'>
 				<h1 className='topbar-title'>Customers</h1>
 				<button
-					className='button primary'
+					className='button primary icon-button'
+					aria-label='Add customer'
+					title='Add customer'
 					onClick={() => {
 						create.reset();
 						setCreating(true);
 					}}>
-					<Plus size={14} aria-hidden='true' /> Add customer
+					<Plus size={14} aria-hidden='true' />
 				</button>
 			</div>
 			<div className='page-content customers-page'>
@@ -83,9 +91,11 @@ export default function CustomersPage() {
 								key={c.id}
 								href={`/customers/${c.id}`}>
 								<div className='customer-identity'>
-									<span className='avatar'>
-										{c.name.slice(0, 2).toUpperCase()}
-									</span>
+									<CustomerImage
+										id={c.id}
+										name={c.name}
+										imageData={c.imageData}
+									/>
 									<span>
 										<strong>{c.name}</strong>
 										<small>{c.domain || 'Customer'}</small>
@@ -128,6 +138,7 @@ export default function CustomersPage() {
 			{creating && (
 				<Modal title='Add customer' onClose={() => setCreating(false)}>
 					<form onSubmit={submit} className='form-stack'>
+						<CustomerImageUpload onProcessingChange={setImageProcessing} />
 						<Field label='Customer name'>
 							<input name='name' placeholder='Acme' required maxLength={160} />
 						</Field>
@@ -144,7 +155,9 @@ export default function CustomersPage() {
 								onClick={() => setCreating(false)}>
 								Cancel
 							</button>
-							<button className='button primary' disabled={create.isPending}>
+							<button
+								className='button primary'
+								disabled={create.isPending || imageProcessing}>
 								{create.isPending ? 'Adding…' : 'Add customer'}
 							</button>
 						</div>
