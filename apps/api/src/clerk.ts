@@ -1,48 +1,35 @@
-import { auth, clerkClient } from '@clerk/nextjs/server';
-import { resolveAgent, agentError, checkAgentOrigin } from '@/lib/agent-auth';
-import { executeAgentCall } from '@repo/api/agent-service';
-import { app } from '@repo/api';
+import { createClerkClient, type ClerkClient } from '@clerk/backend';
+import type { Env } from './context.js';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+let client: ClerkClient | undefined;
+export function clerkClient() {
+	return (client ??= createClerkClient({
+		secretKey: process.env.CLERK_SECRET_KEY,
+		publishableKey:
+			process.env.CLERK_PUBLISHABLE_KEY ??
+			process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+	}));
+}
 
-async function handle(request: Request) {
-	if (request.headers.has('Authorization')) {
-		try {
-			checkAgentOrigin(request);
-			const { principal, bindings } = await resolveAgent(request);
-			const url = new URL(request.url);
-			const body = ['GET', 'HEAD'].includes(request.method)
-				? undefined
-				: await request.json();
-			const result = await executeAgentCall(
-				principal,
-				{
-					path: url.pathname.slice(4) + url.search,
-					method: request.method,
-					body,
-					idempotencyKey: request.headers.get('Idempotency-Key') ?? undefined,
-					expectedUpdatedAt:
-						request.headers.get('X-Expected-Updated-At') ?? undefined,
-				},
-				bindings
-			);
-			return Response.json(result, {
-				headers: { 'Cache-Control': 'no-store' },
-			});
-		} catch (error) {
-			return agentError(error, request);
-		}
+export async function sessionBindings(
+	request: Request,
+	client = clerkClient()
+): Promise<Env['Bindings'] | Response> {
+	const state = await client.authenticateRequest(request, {
+		acceptsToken: 'session_token',
+		authorizedParties: [new URL(process.env.APP_URL!).origin],
+	});
+	const session = state.toAuth();
+	if (!session?.userId) {
+		return Response.json(
+			{ error: 'Sign in to continue.' },
+			{ status: 401, headers: { 'Cache-Control': 'no-store' } }
+		);
 	}
-
-	const session = await auth();
-	if (!session.userId)
-		return Response.json({ error: 'Sign in to continue.' }, { status: 401 });
-	const client = await clerkClient();
 	const user = new URL(request.url).pathname.startsWith('/api/portal/')
 		? await client.users.getUser(session.userId)
 		: null;
-	return app.fetch(request, {
+	return {
 		identity: {
 			userId: session.userId,
 			organizationId: session.orgId ?? null,
@@ -120,12 +107,5 @@ async function handle(request: Request) {
 			}
 			return members;
 		},
-	});
+	};
 }
-export {
-	handle as GET,
-	handle as POST,
-	handle as PUT,
-	handle as PATCH,
-	handle as DELETE,
-};

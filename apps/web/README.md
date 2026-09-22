@@ -8,7 +8,8 @@ See the root README for setup, Clerk organization configuration, Slack, and test
 - `/integrations`: Slack connection and workspace notification preference.
 - `/settings`: custom workspace settings and team management backed by Clerk hooks.
 - `/share/[token]`: private, read-only customer portal.
-- `/api/*`: Hono API with server-verified Clerk identity.
+- `/api/*`, `/mcp`, OAuth discovery: reverse proxies to the standalone API
+  service configured by `API_URL`. Next.js does not execute API routes.
 
 Press **Cmd+K** (or **Ctrl+K**) anywhere in the dashboard, or use Search in the
 sidebar. The command menu searches customers (including archived customers),
@@ -34,6 +35,8 @@ TanStack Query caches are scoped to organization IDs and reset when the signed-i
 user changes. Customer portal queries include the account ID and refetch every
 30 seconds. Private API responses use `Cache-Control: private, no-store`.
 
-Run root `pnpm dev`, or build dependencies first with
-`pnpm exec turbo run build --filter=@repo/api` before `pnpm --filter web dev`.
+Run root `pnpm dev` to start Web, API, and Worker together. The web app can also
+run with `pnpm --filter web dev`; API requests require the standalone server
+at `API_URL` (default `http://127.0.0.1:3101`). It has no dependency on API or
+database packages. Set `API_URL` before building and rebuild when it changes.
 `apps/web/AGENTS.md` contains the installed Next.js documentation instructions.

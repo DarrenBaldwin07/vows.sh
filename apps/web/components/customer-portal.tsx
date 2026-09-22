@@ -3,6 +3,12 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { ChevronDown } from 'lucide-react';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from '@repo/ui/components/tooltip';
 import { CustomerImage } from './customer-image';
 import { WorkspaceLogo } from './workspace-logo';
 import { AccountMenu } from './account-menu';
@@ -172,26 +178,37 @@ function PortalAssignee({
 }) {
 	const [failedUrl, setFailedUrl] = useState<string | null>(null);
 	return (
-		<span
-			className='portal-assignee'
-			title={assignee ? `Assigned to ${assignee.name}` : 'Unassigned'}>
-			{assignee?.imageUrl && failedUrl !== assignee.imageUrl ? (
-				<Image
-					src={assignee.imageUrl}
-					alt=''
-					width={22}
-					height={22}
-					unoptimized
-					onError={() => setFailedUrl(assignee.imageUrl)}
-				/>
-			) : (
-				<span className='portal-assignee-avatar' aria-hidden='true'>
-					{assignee ? Array.from(assignee.name)[0]?.toUpperCase() : '–'}
-				</span>
-			)}
-			<span className='portal-assignee-name'>
-				{assignee?.name ?? 'Unassigned'}
-			</span>
-		</span>
+		<TooltipProvider delayDuration={250}>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<button
+						type='button'
+						className='portal-assignee border-0 bg-transparent p-0'>
+						{assignee?.imageUrl && failedUrl !== assignee.imageUrl ? (
+							<Image
+								src={assignee.imageUrl}
+								alt=''
+								width={22}
+								height={22}
+								unoptimized
+								onError={() => setFailedUrl(assignee.imageUrl)}
+							/>
+						) : (
+							<span className='portal-assignee-avatar' aria-hidden='true'>
+								{assignee ? Array.from(assignee.name)[0]?.toUpperCase() : '–'}
+							</span>
+						)}
+						<span className='portal-assignee-name'>
+							{assignee?.name ?? 'Unassigned'}
+						</span>
+					</button>
+				</TooltipTrigger>
+				<TooltipContent side='top' sideOffset={4}>
+					{assignee
+						? `This request is assigned to ${assignee.name}`
+						: 'This request is unassigned'}
+				</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
 	);
 }

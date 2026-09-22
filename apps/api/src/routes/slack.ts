@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { HTTPException } from 'hono/http-exception';
 import { and, eq, integration, requestSlackThread } from '@repo/db';
-import { admin, identity, type Env } from './context.js';
-import { decrypt, encrypt, newToken, slackConfigured } from './slack.js';
+import { admin, identity, type Env } from '../context.js';
+import { decrypt, encrypt, newToken, slackConfigured } from '../slack.js';
 
 export const slackRoutes = new Hono<Env>();
 slackRoutes.get('/connect', (c) => {

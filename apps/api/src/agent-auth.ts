@@ -1,16 +1,13 @@
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { clerkClient } from './clerk.js';
 import { HTTPException } from 'hono/http-exception';
 import { getDb, organization, eq } from '@repo/db';
-import {
-	authenticateAgentKey,
-	type AgentPrincipal,
-} from '@repo/api/agent-keys';
-import type { Env } from '@repo/api/context';
+import { authenticateAgentKey, type AgentPrincipal } from './agent-keys.js';
+import type { Env } from './context.js';
 
 export async function resolveAgent(
 	request: Request
 ): Promise<{ principal: AgentPrincipal; bindings: Env['Bindings'] }> {
-	const client = await clerkClient();
+	const client = clerkClient();
 	async function membership(organizationId: string, userId: string) {
 		const page = await client.organizations.getOrganizationMembershipList({
 			organizationId,
@@ -40,8 +37,11 @@ export async function resolveAgent(
 			throw new HTTPException(401, {
 				message: 'Send Authorization: Bearer <API_KEY>.',
 			});
-		const session = await auth({ acceptsToken: 'oauth_token' });
-		if (!session.isAuthenticated || !session.userId)
+		const state = await client.authenticateRequest(request, {
+			acceptsToken: 'oauth_token',
+		});
+		const session = state.toAuth();
+		if (!session?.isAuthenticated || !session.userId)
 			throw new HTTPException(401, { message: 'Invalid OAuth access token.' });
 		if (!expectedWorkspace)
 			throw new HTTPException(400, {

@@ -3,32 +3,6 @@
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
-	"exports": {
-		".": {
-			"types": "./src/app.ts",
-			"default": "./dist/app.js"
-		},
-		"./worker": {
-			"types": "./src/worker.ts",
-			"default": "./dist/worker.js"
-		},
-		"./agent-keys": {
-			"types": "./src/agent-keys.ts",
-			"default": "./dist/agent-keys.js"
-		},
-		"./agent-service": {
-			"types": "./src/agent-service.ts",
-			"default": "./dist/agent-service.js"
-		},
-		"./mcp": {
-			"types": "./src/mcp.ts",
-			"default": "./dist/mcp.js"
-		},
-		"./context": {
-			"types": "./src/context.ts",
-			"default": "./dist/context.js"
-		}
-	},
 	"scripts": {
 		"dev": "tsx watch src/index.ts",
 		"build": "tsc",
@@ -37,7 +11,9 @@
 		"lint": "oxlint --config ../../.oxlintrc.json --deny-warnings .",
 		"worker": "tsx src/run-worker.ts",
 		"test": "tsx --test test/*.test.ts",
-		"test:isolated": "node test/run-isolated.mjs"
+		"test:isolated": "node test/run-isolated.mjs",
+		"dev:worker": "tsx watch src/run-worker.ts",
+		"start:worker": "node dist/run-worker.js"
 	},
 	"devDependencies": {
 		"@modelcontextprotocol/client": "^2.0.0",
@@ -48,6 +24,7 @@
 		"typescript": "7.0.2"
 	},
 	"dependencies": {
+		"@clerk/backend": "3.18.1",
 		"@hono/node-server": "^2.1.1",
 		"@modelcontextprotocol/server": "^2.0.0",
 		"@repo/db": "workspace:*",

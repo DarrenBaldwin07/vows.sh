@@ -18,6 +18,11 @@
 			"cache": false,
 			"persistent": true,
 			"dependsOn": ["^build"]
+		},
+		"dev:worker": {
+			"cache": false,
+			"persistent": true,
+			"dependsOn": ["^build"]
 		}
 	},
 	"globalEnv": [
@@ -25,9 +30,14 @@
 		"APP_URL",
 		"CLERK_SECRET_KEY",
 		"NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+		"NEXT_PUBLIC_CLERK_SIGN_IN_URL",
+		"NEXT_PUBLIC_CLERK_SIGN_UP_URL",
 		"SLACK_CLIENT_ID",
 		"SLACK_CLIENT_SECRET",
-		"INTEGRATION_ENCRYPTION_KEY"
+		"INTEGRATION_ENCRYPTION_KEY",
+		"API_URL",
+		"CLERK_PUBLISHABLE_KEY",
+		"CLERK_OAUTH_ISSUER"
 	],
 	"globalDependencies": [".env"]
 }

@@ -7,13 +7,28 @@ portal where they can follow progress and see what’s been delivered. Connect
 integrations like Slack to automatically notify customers in the original thread
 when their vows go live.
 
+[![Deploy on Railway](https://railway.com/button.svg)](#deploy-on-railway)
+
+## Deploy on Railway
+
+The repository includes a Railway configuration for separate Web, API, Worker, and Postgres
+services, with automatic migrations and an API database healthcheck.
+Bring your own Clerk keys; Slack integration is optional.
+
+**One-click template activation is pending.** The button currently opens this
+section. Follow the [Railway deployment guide](.railway/README.md) to deploy now
+or finish creating the shareable template.
+
 ## Local development
 
 Use Node 24+ and pnpm 11.25.0.
 
 1. Install dependencies with `pnpm install`.
 2. Copy `.env.example` to `.env` if it doesn't already exist.
-3. Configure Clerk keys in `apps/web/.env.local` (see `apps/web/.env.example`).
+3. Configure the same Clerk instance in both places: `CLERK_PUBLISHABLE_KEY`
+   and `CLERK_SECRET_KEY` in the root `.env` for the API, and
+   `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` in
+   `apps/web/.env.local` for the web app (see `apps/web/.env.example`).
 4. In Clerk, enable **Organizations**, choose **membership optional**, and allow
    users to create organizations. Keep the default `org:admin` / `org:member`
    roles. Enable email verification for portal users. Organization membership is
@@ -21,9 +36,16 @@ Use Node 24+ and pnpm 11.25.0.
 5. Run `pnpm db:up`, then `pnpm db:migrate`.
 6. Run `pnpm dev` and open http://localhost:3100.
 
-`pnpm dev` starts the web app, notification worker, and the existing docs app.
-The Hono API is mounted under the web app's `/api` routes, with Clerk identity
-supplied by the Next.js server. There is no separately exposed manager API.
+`pnpm dev` starts the web app (3100), standalone Hono HTTP API (3101),
+notification worker, and docs app. `apps/api/src/index.ts` owns the HTTP server;
+all API route handlers live in `apps/api/src/routes/`. The API verifies Clerk
+sessions and agent credentials itself and owns database access.
+
+Next.js only proxies `/api/*`, `/mcp`, and OAuth discovery to `API_URL`
+(default `http://127.0.0.1:3101`). There are no Next.js API handlers or backend
+package imports. Keeping browser requests on the web origin preserves session
+cookies, CSRF protection, and Slack callbacks. The API also accepts direct HTTP
+requests on its own port; an API key can be used without the web process.
 No demo customer data is seeded. Sign in, create a workspace, and add a customer.
 
 ## Customer sharing
@@ -48,7 +70,7 @@ Portal data refreshes every 30 seconds and on window focus.
    (or the deployment environment).
 5. Generate a key with
    `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
-   and set `INTEGRATION_ENCRYPTION_KEY` on both the web app and worker. Keep this
+   and set `INTEGRATION_ENCRYPTION_KEY` on both the API and worker. Keep this
    key stable: changing it requires reconnecting Slack integrations.
 6. A Vows admin connects Slack in **Integrations** and enables completion updates.
 7. Add the Vows bot to the channel containing the customer's original request.
@@ -71,11 +93,16 @@ Reopening and completing an already-notified request does not automatically rese
 Run `pnpm build`, apply migrations with `pnpm db:migrate`, then run:
 
 - Web: `pnpm --filter web start`
-- Background worker: `pnpm --filter @repo/api start`
+- API HTTP server: `pnpm --filter @repo/api start`
+- Background worker: `pnpm --filter @repo/api start:worker`
 
-Both processes need the same `DATABASE_URL`, `APP_URL`, and integration encryption
-key. Only the web app needs Clerk keys and Slack OAuth client credentials. On a
-serverless web host, deploy the worker separately as a persistent Node process.
+The API and worker share `DATABASE_URL`, `APP_URL`, and the integration encryption
+key. Web and API use the same Clerk instance; only the API needs Slack OAuth
+credentials and `CLERK_OAUTH_ISSUER`. The web app needs `API_URL` at build time
+and runtime, pointing to the API service (use Railway's private network). It
+does not need database or integration credentials. Run migrations before
+starting the API. Deploy the API and worker as separate persistent Node processes.
+See the [Railway guide](.railway/README.md) for the four-service configuration.
 Jobs use Postgres row locking, so multiple worker instances are supported.
 Disconnecting Slack disables delivery locally and removes stored credentials;
 the admin can uninstall the app in Slack to revoke the Slack installation itself.

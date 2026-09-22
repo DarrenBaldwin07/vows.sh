@@ -17,7 +17,7 @@ Connect an MCP client with Streamable HTTP:
 }
 ```
 
-Replace the URL with your HTTPS deployment for remote clients. `localhost` works only for clients running on the same computer. Some clients use `httpHeaders` or require an explicit HTTP transport option instead; the server requires the actual `Authorization` header, never a query-string key. Keep the key in the client’s secret configuration rather than a committed project file.
+Use `http://localhost:3101/mcp` to connect directly to the API without Web, or replace the URL with your HTTPS deployment for remote clients. `localhost` works only for clients running on the same computer. Some clients use `httpHeaders` or require an explicit HTTP transport option instead; the server requires the actual `Authorization` header, never a query-string key. Keep the key in the client’s secret configuration rather than a committed project file.
 
 The SDK v2 handler supports MCP 2026-07-28 and the stateless 2025-era HTTP handshake. Discovery and tool calls require authentication. This endpoint does not enable browser-session access or allow cross-origin browser calls. Non-browser clients can omit `Origin`; a supplied `Origin` must match `APP_URL`.
 
@@ -63,7 +63,7 @@ Bearer API keys work without any OAuth setup. The endpoint can alternatively aut
 
 1. Enable Clerk OAuth and advertise the custom `vows:read` and `vows:write` scopes. Write scope includes read access.
 2. Configure compatible OAuth client registration and consent in Clerk.
-3. Set `CLERK_OAUTH_ISSUER` in the web environment to the issuer from Clerk’s authorization-server metadata. Set `APP_URL` to the canonical HTTPS web origin.
+3. Set `CLERK_OAUTH_ISSUER` in the API environment to the issuer from Clerk’s authorization-server metadata. Set `APP_URL` to the canonical HTTPS web origin.
 4. Use `/mcp?workspace=CLERK_ORGANIZATION_ID` for OAuth connections. The workspace is explicit and current membership is checked on each HTTP request. No workspace IDs are accepted as tool arguments.
 
 Discovery metadata is served at `/.well-known/oauth-protected-resource/mcp`. Without OAuth configuration, it returns 404 and 401 responses advertise only bearer API-key authentication. With configuration, 401 responses advertise the protected resource metadata URL. Revoke OAuth grants through Clerk; the Agent connections list manages Vows API keys only.
@@ -72,13 +72,13 @@ OAuth requires deployment/account configuration and has not been live-tested aga
 
 ## Development and checks
 
-Build `@repo/db` and `@repo/api` after changing server code: Next.js loads their built exports. Run migrations before starting the new endpoint.
+Build `@repo/db` and `@repo/api` after changing server code, then run `pnpm --filter @repo/api start`. The standalone API serves MCP directly on port 3101; Web proxies the public `/mcp` URL to it. Run migrations before starting the API.
 
 ```sh
 pnpm --filter @repo/db db:migrate
 pnpm --filter @repo/db build
 pnpm --filter @repo/api build
-pnpm --filter web check-types
+pnpm --filter @repo/api check-types
 pnpm lint
 pnpm --filter @repo/api test:isolated
 ```

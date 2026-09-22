@@ -13,12 +13,9 @@
 	"dependencies": {
 		"@clerk/nextjs": "^7.9.4",
 		"@clerk/ui": "^1.33.1",
-		"@repo/api": "workspace:*",
-		"@repo/db": "workspace:*",
 		"@repo/ui": "workspace:*",
 		"@tanstack/react-query": "^5.103.1",
 		"cmdk": "^1.1.1",
-		"hono": "^4.13.8",
 		"lucide-react": "^1.47.0",
 		"next": "16.3.4",
 		"react": "19.2.8",

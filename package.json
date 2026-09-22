@@ -3,7 +3,10 @@
 	"private": true,
 	"scripts": {
 		"build": "turbo run build",
-		"dev": "turbo run dev",
+		"build:railway:web": "turbo run build --filter=web",
+		"build:railway:worker": "turbo run build --filter=@repo/api",
+		"check:railway": "tsc --project .railway/tsconfig.json",
+		"dev": "turbo run dev dev:worker",
 		"lint": "oxlint --deny-warnings .",
 		"format": "oxfmt --write .",
 		"check-types": "turbo run check-types",
@@ -15,11 +18,13 @@
 		"db:studio": "pnpm --filter @repo/db db:studio",
 		"format:check": "oxfmt --check .",
 		"lint:ox": "oxlint --deny-warnings .",
-		"test": "pnpm --filter @repo/db build && pnpm --filter @repo/api test"
+		"test": "pnpm --filter @repo/db build && pnpm --filter @repo/api test",
+		"build:railway:api": "turbo run build --filter=@repo/api"
 	},
 	"devDependencies": {
 		"oxfmt": "0.68.0",
 		"oxlint": "1.83.0",
+		"railway": "3.11.0",
 		"turbo": "^2.11.2",
 		"typescript": "7.0.2"
 	},
