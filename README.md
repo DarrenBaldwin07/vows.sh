@@ -2,9 +2,10 @@
 
 make vows to your customers.
 
-Vows tracks customer requests and gives each customer a private, read-only portal.
-Managers work in Clerk Organizations; customer viewers sign in with Clerk but do
-not join the internal organization. All product tables have singular names.
+Vows helps you track customer requests and keep customers updated through a private
+portal where they can follow progress and see what’s been delivered. Connect
+integrations like Slack to automatically notify customers in the original thread
+when their vows go live.
 
 ## Local development
 
