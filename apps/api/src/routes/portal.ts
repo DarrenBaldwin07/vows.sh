@@ -11,23 +11,42 @@ import {
 	organization,
 	customerAccess,
 	customerShareLink,
+	portalPath,
 	request,
 } from '@repo/db';
-import { identity, type Env } from '../context.js';
+import { identity, type Env, type ApiContext } from '../context.js';
 
 export const portalRoutes = new Hono<Env>();
-portalRoutes.get('/portal/:token', async (c) => {
+async function renderPortal(c: ApiContext) {
 	const user = identity(c);
-	const [link] = await c
-		.get('db')
-		.select({ customerId: customerShareLink.customerId })
-		.from(customerShareLink)
-		.where(
-			and(
-				eq(customerShareLink.token, c.req.param('token')),
-				isNull(customerShareLink.revokedAt)
-			)
-		);
+	const [link] = c.req.param('workspace')
+		? await c
+				.get('db')
+				.select({ customerId: customerShareLink.customerId })
+				.from(portalPath)
+				.innerJoin(
+					customerShareLink,
+					eq(portalPath.shareLinkId, customerShareLink.id)
+				)
+				.where(
+					and(
+						eq(
+							portalPath.path,
+							`/share/${c.req.param('workspace')}/${c.req.param('customer')}`
+						),
+						isNull(customerShareLink.revokedAt)
+					)
+				)
+		: await c
+				.get('db')
+				.select({ customerId: customerShareLink.customerId })
+				.from(customerShareLink)
+				.where(
+					and(
+						eq(customerShareLink.token, c.req.param('token')!),
+						isNull(customerShareLink.revokedAt)
+					)
+				);
 	if (!link)
 		throw new HTTPException(404, {
 			message: 'This link is unavailable. Ask your contact for a new link.',
@@ -116,4 +135,6 @@ portalRoutes.get('/portal/:token', async (c) => {
 			assignee: assigneeId ? (assigneeById.get(assigneeId) ?? null) : null,
 		})),
 	});
-});
+}
+portalRoutes.get('/portal/:workspace/:customer', renderPortal);
+portalRoutes.get('/portal/:token', renderPortal);

@@ -2443,3 +2443,14 @@ select.inline-status,
 	cursor: pointer;
 	font-size: 12px;
 }
+
+.portal-address-form {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 12px;
+	margin: 18px 0;
+}
+.portal-address-form > .form-grid {
+	width: 100%;
+}

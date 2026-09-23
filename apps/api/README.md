@@ -83,3 +83,11 @@ private hostname and port 3101. API owns migrations and its database healthcheck
 applies migrations, runs the full suite, and removes the test database. It covers
 workspace isolation, portal access, agent scopes, delivery behavior, and standalone
 HTTP authentication. Slack calls are stubbed and do not send real messages.
+
+Customer portal links use `/share/<workspace>/<customer>` in the web app and
+`/api/portal/<workspace>/<customer>` in the API. Share portal creates readable
+names automatically and lets admins edit them. Names are stable across customer
+renames; old readable aliases and legacy `/share/<token>` links retain the same
+verified-email authorization. Replacing or disabling a link revokes its token
+and every readable alias. Previously used paths are reserved, so re-enabling
+sharing generates a fresh URL instead of reactivating revoked links.

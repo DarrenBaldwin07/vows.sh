@@ -349,10 +349,10 @@ test(
 		await t.test(
 			'portal requires an invited verified email and returns only public fields',
 			async () => {
-				const link = await json<{ path: string }>(
+				const link = await json<{ path: string; legacyPath: string }>(
 					await call(`/manage/customers/${a.id}/sharing`, 'POST', {})
 				);
-				token = link.path.split('/').at(-1)!;
+				token = link.legacyPath.split('/').at(-1)!;
 				assert.equal(
 					(await call(`/portal/${token}`, 'GET', undefined, viewer)).status,
 					403
@@ -409,14 +409,14 @@ test(
 						email: 'customer@acme.test',
 					})
 				);
-				const link = await json<{ path: string }>(
+				const link = await json<{ path: string; legacyPath: string }>(
 					await call(`/manage/customers/${a.id}/sharing`, 'POST', {})
 				);
 				assert.equal(
 					(await call(`/portal/${token}`, 'GET', undefined, viewer)).status,
 					404
 				);
-				token = link.path.split('/').at(-1)!;
+				token = link.legacyPath.split('/').at(-1)!;
 				await json(
 					await call(`/manage/customers/${a.id}`, 'PATCH', { archived: true })
 				);

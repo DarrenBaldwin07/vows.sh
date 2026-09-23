@@ -28,12 +28,19 @@ type Portal = {
 		assignee: { name: string; imageUrl: string | null } | null;
 	}[];
 };
-export function CustomerPortal({ token }: { token: string }) {
+export function CustomerPortal({
+	token,
+	address,
+}:
+	| { token: string; address?: never }
+	| { token?: never; address: { workspace: string; customer: string } }) {
+	const locator = address
+		? [address.workspace, address.customer].map(encodeURIComponent).join('/')
+		: encodeURIComponent(token);
 	const { userId, isLoaded } = useAuth();
 	const query = useQuery({
-		queryKey: ['portal', token, userId],
-		queryFn: ({ signal }) =>
-			api<Portal>(`/portal/${encodeURIComponent(token)}`, { signal }),
+		queryKey: ['portal', locator, userId],
+		queryFn: ({ signal }) => api<Portal>(`/portal/${locator}`, { signal }),
 		enabled: isLoaded && Boolean(userId),
 		retry: false,
 		refetchInterval: 30000,
@@ -44,7 +51,7 @@ export function CustomerPortal({ token }: { token: string }) {
 				<div className='portal-brand'>
 					{query.data?.workspace ? (
 						<WorkspaceLogo
-							organization={{ ...query.data.workspace, id: token }}
+							organization={{ ...query.data.workspace, id: locator }}
 							showLoadingSkeleton
 						/>
 					) : query.isPending ? (

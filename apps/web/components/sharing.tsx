@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Field, Loading, Message, Modal } from './ui';
 type Sharing = {
-	link: { id: string; token: string } | null;
+	link: { id: string; token: string; path: string } | null;
 	access: { id: string; email: string; accepted: boolean }[];
 };
 export function SharingDialog({
@@ -46,7 +46,7 @@ export function SharingDialog({
 		},
 	});
 	const link = query.data?.link
-		? `${typeof window !== 'undefined' ? window.location.origin : ''}/share/${query.data.link.token}`
+		? `${typeof window !== 'undefined' ? window.location.origin : ''}${query.data.link.path}`
 		: '';
 	async function copy() {
 		try {
@@ -95,6 +95,58 @@ export function SharingDialog({
 											<Copy size={14} aria-hidden='true' /> Copy link
 										</button>
 									</div>
+									<form
+										className='portal-address-form'
+										key={query.data!.link!.path}
+										onSubmit={(event) => {
+											event.preventDefault();
+											const form = new FormData(event.currentTarget);
+											change.mutate(
+												{
+													suffix: 'sharing',
+													method: 'PATCH',
+													body: {
+														workspaceSlug: form.get('workspaceSlug'),
+														customerSlug: form.get('customerSlug'),
+													},
+												},
+												{
+													onSuccess: () =>
+														setMessage(
+															'Link updated. Previously shared links still work.'
+														),
+												}
+											);
+										}}>
+										<div className='form-grid'>
+											<Field label='Workspace URL name'>
+												<input
+													name='workspaceSlug'
+													required
+													maxLength={60}
+													pattern='[a-z0-9]+(-[a-z0-9]+)*'
+													defaultValue={query.data!.link!.path.split('/')[2]}
+												/>
+											</Field>
+											<Field label='Customer URL name'>
+												<input
+													name='customerSlug'
+													required
+													maxLength={60}
+													pattern='[a-z0-9]+(-[a-z0-9]+)*'
+													defaultValue={query.data!.link!.path.split('/')[3]}
+												/>
+											</Field>
+										</div>
+										<p className='small muted'>
+											Use lowercase letters, numbers, and hyphens. These names
+											stay the same when you rename a customer. Changing the
+											workspace URL name also sets the default for future links.
+										</p>
+										<button className='button' disabled={change.isPending}>
+											Save URL
+										</button>
+									</form>
 									<div className='link-actions'>
 										<button
 											disabled={change.isPending}

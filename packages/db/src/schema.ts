@@ -39,6 +39,7 @@ export const deliveryStatus = pgEnum('DeliveryStatus', [
 export const organization = pgTable('Organization', {
 	id: id(),
 	clerkOrganizationId: text('clerkOrganizationId').notNull().unique(),
+	portalSlug: text('portalSlug'),
 	createdAt: createdAt(),
 });
 export const customer = pgTable(
@@ -82,6 +83,7 @@ export const customerShareLink = pgTable(
 			.notNull()
 			.references(() => customer.id, { onDelete: 'cascade' }),
 		token: text('token').notNull().unique(),
+		path: text('path'),
 		createdAt: createdAt(),
 		revokedAt: date('revokedAt'),
 	},
@@ -245,3 +247,17 @@ export const agentOperation = pgTable(
 		index().on(t.organizationId, t.createdAt),
 	]
 );
+
+// Reserve old workspace names and paths so they cannot be reassigned to another tenant.
+export const portalWorkspace = pgTable('PortalWorkspace', {
+	slug: text('slug').primaryKey(),
+	organizationId: text('organizationId')
+		.notNull()
+		.references(() => organization.id, { onDelete: 'cascade' }),
+});
+export const portalPath = pgTable('PortalPath', {
+	path: text('path').primaryKey(),
+	shareLinkId: text('shareLinkId')
+		.notNull()
+		.references(() => customerShareLink.id, { onDelete: 'cascade' }),
+});
