@@ -5,10 +5,26 @@ import { cn } from 'cn';
 import { Select as SelectPrimitive } from 'radix-ui';
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from 'lucide-react';
 
+const SelectPortalContext = React.createContext<{
+	container: HTMLDialogElement | null;
+	setContainer: React.Dispatch<React.SetStateAction<HTMLDialogElement | null>>;
+} | null>(null);
+
 function Select({
 	...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-	return <SelectPrimitive.Root data-slot='select' {...props} />;
+	const [container, setContainer] = React.useState<HTMLDialogElement | null>(
+		null
+	);
+	const portal = React.useMemo(
+		() => ({ container, setContainer }),
+		[container]
+	);
+	return (
+		<SelectPortalContext.Provider value={portal}>
+			<SelectPrimitive.Root data-slot='select' {...props} />
+		</SelectPortalContext.Provider>
+	);
 }
 
 function SelectGroup({
@@ -31,6 +47,7 @@ function SelectValue({
 }
 
 function SelectTrigger({
+	ref,
 	className,
 	size = 'default',
 	children,
@@ -38,8 +55,19 @@ function SelectTrigger({
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
 	size?: 'sm' | 'default';
 }) {
+	const triggerRef = React.useRef<HTMLButtonElement>(null);
+	const setContainer = React.useContext(SelectPortalContext)?.setContainer;
+	const attachTrigger = React.useCallback(
+		(node: HTMLButtonElement | null) => {
+			triggerRef.current = node;
+			setContainer?.(node?.closest('dialog') ?? null);
+		},
+		[setContainer]
+	);
+	React.useImperativeHandle(ref, () => triggerRef.current!, [triggerRef]);
 	return (
 		<SelectPrimitive.Trigger
+			ref={attachTrigger}
 			data-slot='select-trigger'
 			data-size={size}
 			className={cn(
@@ -62,8 +90,11 @@ function SelectContent({
 	align = 'center',
 	...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+	const portal = React.useContext(SelectPortalContext);
+	// Keep menus in the native dialog's top layer, where they remain interactive.
+	const container = portal?.container ?? undefined;
 	return (
-		<SelectPrimitive.Portal>
+		<SelectPrimitive.Portal container={container}>
 			<SelectPrimitive.Content
 				data-slot='select-content'
 				data-align-trigger={position === 'item-aligned'}

@@ -1,4 +1,12 @@
 'use client';
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@repo/ui/components/select';
 
 import { useAuth } from '@clerk/nextjs';
 import { useQuery } from '@tanstack/react-query';
@@ -223,21 +231,32 @@ function SearchDialog({ onClose }: { onClose: () => void }) {
 					) : (
 						<span>Workspace</span>
 					)}
-					<label className='field'>
+					<div className='field'>
 						<span className='sr-only'>Filter requests by status</span>
-						<select
-							value={status}
-							onChange={(event) =>
-								setStatus(event.target.value as Status | '')
+						<Select
+							value={status || 'all'}
+							onValueChange={(value) =>
+								setStatus(value === 'all' ? '' : (value as Status))
 							}>
-							<option value=''>All statuses</option>
-							{statuses.map((value) => (
-								<option value={value} key={value}>
-									{statusLabels[value]}
-								</option>
-							))}
-						</select>
-					</label>
+							<SelectTrigger
+								aria-label='Filter requests by status'
+								onKeyDown={(event) => event.stopPropagation()}>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent
+								position='popper'
+								onKeyDown={(event) => event.stopPropagation()}>
+								<SelectGroup>
+									<SelectItem value='all'>All statuses</SelectItem>
+									{statuses.map((value) => (
+										<SelectItem value={value} key={value}>
+											{statusLabels[value]}
+										</SelectItem>
+									))}
+								</SelectGroup>
+							</SelectContent>
+						</Select>
+					</div>
 				</div>
 				<Command.List aria-busy={pending}>
 					{scope && !search.trim() && (

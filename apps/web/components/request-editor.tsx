@@ -1,4 +1,13 @@
 'use client';
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@repo/ui/components/select';
+
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -75,7 +84,10 @@ export function RequestEditor({
 			description: data.get('description'),
 			internalNotes: data.get('internalNotes'),
 			status: data.get('status'),
-			assigneeId: data.get('assigneeId') || null,
+			assigneeId:
+				data.get('assigneeId') === 'unassigned'
+					? null
+					: data.get('assigneeId') || null,
 			completionNote: data.get('completionNote'),
 			slackUrl: data.get('slackUrl') || null,
 			notifyOnDone:
@@ -109,29 +121,45 @@ export function RequestEditor({
 					</Field>
 					<div className='form-grid'>
 						<Field label='Status'>
-							<select name='status' defaultValue={row?.status ?? 'todo'}>
-								{statuses.map((s) => (
-									<option value={s} key={s}>
-										{statusLabels[s]}
-									</option>
-								))}
-							</select>
+							<Select name='status' defaultValue={row?.status ?? 'todo'}>
+								<SelectTrigger aria-label='Status'>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent position='popper'>
+									<SelectGroup>
+										{statuses.map((s) => (
+											<SelectItem value={s} key={s}>
+												{statusLabels[s]}
+											</SelectItem>
+										))}
+									</SelectGroup>
+								</SelectContent>
+							</Select>
 						</Field>
 						<Field label='Assigned to'>
-							<select name='assigneeId' defaultValue={row?.assigneeId ?? ''}>
-								<option value=''>Unassigned</option>
-								{row?.assigneeId &&
-									!members.data?.some((m) => m.id === row.assigneeId) && (
-										<option value={row.assigneeId} disabled>
-											Former teammate — choose a new assignee
-										</option>
-									)}
-								{members.data?.map((m) => (
-									<option key={m.id} value={m.id}>
-										{m.name}
-									</option>
-								))}
-							</select>
+							<Select
+								name='assigneeId'
+								defaultValue={row?.assigneeId ?? 'unassigned'}>
+								<SelectTrigger aria-label='Assigned to'>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent position='popper'>
+									<SelectGroup>
+										<SelectItem value='unassigned'>Unassigned</SelectItem>
+										{row?.assigneeId &&
+											!members.data?.some((m) => m.id === row.assigneeId) && (
+												<SelectItem value={row.assigneeId} disabled>
+													Former teammate — choose a new assignee
+												</SelectItem>
+											)}
+										{members.data?.map((m) => (
+											<SelectItem key={m.id} value={m.id}>
+												{m.name}
+											</SelectItem>
+										))}
+									</SelectGroup>
+								</SelectContent>
+							</Select>
 						</Field>
 					</div>
 					<Field label='Description' hint='Visible to the customer.'>
@@ -165,7 +193,7 @@ export function RequestEditor({
 							/>
 						</Field>
 						<Field label='Notify customer when done'>
-							<select
+							<Select
 								name='notifyOnDone'
 								defaultValue={
 									row?.notifyOnDone == null
@@ -174,10 +202,21 @@ export function RequestEditor({
 											? 'on'
 											: 'off'
 								}>
-								<option value='inherit'>Use workspace setting</option>
-								<option value='on'>Notify in original thread</option>
-								<option value='off'>Don’t notify</option>
-							</select>
+								<SelectTrigger aria-label='Notify customer when done'>
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent position='popper'>
+									<SelectGroup>
+										<SelectItem value='inherit'>
+											Use workspace setting
+										</SelectItem>
+										<SelectItem value='on'>
+											Notify in original thread
+										</SelectItem>
+										<SelectItem value='off'>Don’t notify</SelectItem>
+									</SelectGroup>
+								</SelectContent>
+							</Select>
 						</Field>
 						<Field
 							label='Completion note'

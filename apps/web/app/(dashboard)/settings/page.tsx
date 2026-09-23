@@ -1,4 +1,13 @@
 'use client';
+import {
+	Select,
+	SelectContent,
+	SelectGroup,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@repo/ui/components/select';
+
 import { useAuth, useOrganization, useOrganizationList } from '@clerk/nextjs';
 import {
 	ChevronLeft,
@@ -43,6 +52,7 @@ function WorkspaceSettings() {
 	});
 	const { userMemberships } = useOrganizationList({ userMemberships: true });
 	const [busy, setBusy] = useState(false);
+	const [inviteRole, setInviteRole] = useState('org:member');
 	const logoInput = useRef<HTMLInputElement>(null);
 	const [logoAction, setLogoAction] = useState<'upload' | 'remove' | null>(
 		null
@@ -127,6 +137,7 @@ function WorkspaceSettings() {
 				role: String(data.get('role')),
 			});
 			form.reset();
+			setInviteRole('org:member');
 		}, 'Invitation sent.');
 	}
 	if (!isLoaded || !organization || !memberships || !invitations)
@@ -207,10 +218,20 @@ function WorkspaceSettings() {
 						/>
 					</Field>
 					<Field label='Role'>
-						<select name='role' defaultValue='org:member'>
-							<option value='org:member'>Member</option>
-							<option value='org:admin'>Admin</option>
-						</select>
+						<Select
+							name='role'
+							value={inviteRole}
+							onValueChange={setInviteRole}>
+							<SelectTrigger aria-label='Role'>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent position='popper'>
+								<SelectGroup>
+									<SelectItem value='org:member'>Member</SelectItem>
+									<SelectItem value='org:admin'>Admin</SelectItem>
+								</SelectGroup>
+							</SelectContent>
+						</Select>
 					</Field>
 					<button className='button primary' disabled={busy}>
 						<MailPlus size={14} aria-hidden='true' />
@@ -248,23 +269,32 @@ function WorkspaceSettings() {
 											</strong>
 											<span>{person?.identifier}</span>
 										</div>
-										<select
-											aria-label={`Role for ${name}`}
+										<Select
 											value={member.role}
 											disabled={busy || isSelf}
-											onChange={(e) => {
-												const role = e.target.value;
+											onValueChange={(role) => {
 												void run(
 													() => member.update({ role }),
 													'Member role updated.'
 												);
 											}}>
-											{!['org:admin', 'org:member'].includes(member.role) && (
-												<option value={member.role}>{member.roleName}</option>
-											)}
-											<option value='org:member'>Member</option>
-											<option value='org:admin'>Admin</option>
-										</select>
+											<SelectTrigger aria-label={`Role for ${name}`}>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent position='popper'>
+												<SelectGroup>
+													{!['org:admin', 'org:member'].includes(
+														member.role
+													) && (
+														<SelectItem value={member.role}>
+															{member.roleName}
+														</SelectItem>
+													)}
+													<SelectItem value='org:member'>Member</SelectItem>
+													<SelectItem value='org:admin'>Admin</SelectItem>
+												</SelectGroup>
+											</SelectContent>
+										</Select>
 										<button
 											className='icon-button'
 											aria-label={`Remove ${name}`}
