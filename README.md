@@ -59,6 +59,11 @@ The same link can be copied later. Replacing it invalidates the previous link;
 removing an email revokes access; archiving a customer disables the portal.
 Internal notes, assignments, Slack links, and delivery logs stay private.
 Portal data refreshes every 30 seconds and on window focus.
+Invited customers can choose **New request** to submit a title and optional
+description. Requests appear immediately in their portal as **Todo** and in the
+team's customer request list. Customers cannot set internal notes, assignments,
+or status; submissions use the same verified-email and active-link checks as
+viewing the portal.
 
 ## Slack setup
 

@@ -4,6 +4,7 @@ import {
 	parseSlackLink,
 	shouldNotify,
 	requestInput,
+	portalRequestInput,
 	customerInput,
 } from '../src/validation.js';
 import { decrypt, encrypt, SlackError, slackCall } from '../src/slack.js';
@@ -62,6 +63,23 @@ test('request input rejects empty titles and invalid statuses', () => {
 		false
 	);
 	assert.equal(requestInput.parse({ title: ' Export ' }).title, 'Export');
+});
+test('portal request input accepts only bounded customer-facing fields', () => {
+	assert.deepEqual(portalRequestInput.parse({ title: ' Export ' }), {
+		title: 'Export',
+		description: '',
+	});
+	for (const body of [
+		{ title: ' ' },
+		{ title: 'a'.repeat(241) },
+		{ title: 'Export', description: 'a'.repeat(20001) },
+		{ title: 'Export', status: 'done' },
+		{ title: 'Export', internalNotes: 'private' },
+		{ title: 'Export', customerId: 'other-customer' },
+		{ title: 'Export', organizationId: 'other-organization' },
+		{ title: 'Export', assigneeId: 'admin' },
+	])
+		assert.equal(portalRequestInput.safeParse(body).success, false);
 });
 test('credentials use authenticated encryption and reject tampering', () => {
 	process.env.INTEGRATION_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString(

@@ -13,11 +13,13 @@ import {
 	customerShareLink,
 	portalPath,
 	request,
+	requestEvent,
 } from '@repo/db';
 import { identity, type Env, type ApiContext } from '../context.js';
+import { portalRequestInput } from '../validation.js';
 
 export const portalRoutes = new Hono<Env>();
-async function renderPortal(c: ApiContext) {
+async function authorizePortal(c: ApiContext) {
 	const user = identity(c);
 	const [link] = c.req.param('workspace')
 		? await c
@@ -86,6 +88,7 @@ async function renderPortal(c: ApiContext) {
 	const [owner] = await c
 		.get('db')
 		.select({
+			organizationId: customer.organizationId,
 			name: customer.name,
 			imageData: customer.imageData,
 			archivedAt: customer.archivedAt,
@@ -96,6 +99,10 @@ async function renderPortal(c: ApiContext) {
 		.where(eq(customer.id, link.customerId));
 	if (!owner || owner.archivedAt)
 		throw new HTTPException(404, { message: 'This portal is unavailable.' });
+	return { customerId: link.customerId, owner };
+}
+async function renderPortal(c: ApiContext) {
+	const { customerId, owner } = await authorizePortal(c);
 	const rows = await c
 		.get('db')
 		.select({
@@ -109,7 +116,7 @@ async function renderPortal(c: ApiContext) {
 			assigneeId: request.assigneeId,
 		})
 		.from(request)
-		.where(eq(request.customerId, link.customerId))
+		.where(eq(request.customerId, customerId))
 		.orderBy(desc(request.updatedAt));
 	const assigneeIds = [
 		...new Set(rows.flatMap((row) => (row.assigneeId ? [row.assigneeId] : []))),
@@ -136,5 +143,35 @@ async function renderPortal(c: ApiContext) {
 		})),
 	});
 }
+async function createPortalRequest(c: ApiContext) {
+	const { customerId, owner } = await authorizePortal(c);
+	const data = portalRequestInput.parse(await c.req.json());
+	const saved = await c.get('db').transaction(async (tx) => {
+		const [created] = await tx
+			.insert(request)
+			.values({
+				...data,
+				customerId,
+				organizationId: owner.organizationId,
+				createdBy: identity(c).userId,
+				status: 'todo',
+			})
+			.returning({ id: request.id });
+		await tx.insert(requestEvent).values({
+			requestId: created!.id,
+			actorId: identity(c).userId,
+			fromStatus: null,
+			toStatus: 'todo',
+		});
+		await tx
+			.update(customer)
+			.set({ updatedAt: new Date() })
+			.where(eq(customer.id, customerId));
+		return created!;
+	});
+	return c.json(saved, 201);
+}
+portalRoutes.post('/portal/:workspace/:customer/requests', createPortalRequest);
+portalRoutes.post('/portal/:token/requests', createPortalRequest);
 portalRoutes.get('/portal/:workspace/:customer', renderPortal);
 portalRoutes.get('/portal/:token', renderPortal);

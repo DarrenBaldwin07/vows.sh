@@ -2295,8 +2295,12 @@ h3 {
 
 .portal-customer-heading {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 14px;
+}
+.portal-new-request {
+	margin-left: auto;
 }
 .portal-customer-heading > .customer-image,
 .portal-customer-heading > .initial-badge {

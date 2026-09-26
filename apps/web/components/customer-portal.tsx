@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Plus } from 'lucide-react';
 import {
 	Tooltip,
 	TooltipContent,
@@ -12,9 +12,9 @@ import {
 import { CustomerImage } from './customer-image';
 import { WorkspaceLogo } from './workspace-logo';
 import { AccountMenu } from './account-menu';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, dateLabel, statuses, statusLabels, type Status } from '@/lib/api';
-import { EmptyState, Loading, Message, StatusIcon } from './ui';
+import { EmptyState, Field, Loading, Message, Modal, StatusIcon } from './ui';
 type Portal = {
 	customer: { name: string; imageData: string | null };
 	workspace: { name: string; imageUrl: string; hasImage: boolean } | null;
@@ -38,6 +38,8 @@ export function CustomerPortal({
 		? [address.workspace, address.customer].map(encodeURIComponent).join('/')
 		: encodeURIComponent(token);
 	const { userId, isLoaded } = useAuth();
+	const [creating, setCreating] = useState(false);
+	const [submitted, setSubmitted] = useState(false);
 	const query = useQuery({
 		queryKey: ['portal', locator, userId],
 		queryFn: ({ signal }) => api<Portal>(`/portal/${locator}`, { signal }),
@@ -87,10 +89,35 @@ export function CustomerPortal({
 								/>
 							)}
 							<h1>{query.data.customer.name}</h1>
+							<button
+								type='button'
+								className='button primary portal-new-request'
+								onClick={() => {
+									setSubmitted(false);
+									setCreating(true);
+								}}>
+								<Plus size={15} aria-hidden='true' />
+								New request
+							</button>
 						</div>
 						<p className='portal-intro'>
 							A shared view of your requests, progress, and updates.
 						</p>
+						{submitted && (
+							<Message>Your request has been sent to the team.</Message>
+						)}
+						{creating && (
+							<PortalRequestForm
+								key={`${locator}:${userId}`}
+								locator={locator}
+								userId={userId}
+								onClose={() => setCreating(false)}
+								onSubmitted={() => {
+									setCreating(false);
+									setSubmitted(true);
+								}}
+							/>
+						)}
 						<div className='portal-summary'>
 							<span>
 								<strong>
@@ -168,13 +195,91 @@ export function CustomerPortal({
 							})
 						) : (
 							<EmptyState title='Your requests will appear here'>
-								Your contact will add requests as they come in.
+								Have something in mind? Create a request to let the team know.
 							</EmptyState>
 						)}
 					</>
 				)}
 			</main>
 		</div>
+	);
+}
+
+function PortalRequestForm({
+	locator,
+	userId,
+	onClose,
+	onSubmitted,
+}: {
+	locator: string;
+	userId: string | null | undefined;
+	onClose: () => void;
+	onSubmitted: () => void;
+}) {
+	const client = useQueryClient();
+	const [title, setTitle] = useState('');
+	const [description, setDescription] = useState('');
+	const mutation = useMutation({
+		mutationFn: () =>
+			api(`/portal/${locator}/requests`, {
+				method: 'POST',
+				body: { title: title.trim(), description },
+			}),
+		onSuccess: () => {
+			void client.invalidateQueries({ queryKey: ['portal', locator, userId] });
+			onSubmitted();
+		},
+	});
+	return (
+		<Modal title='New request' onClose={() => !mutation.isPending && onClose()}>
+			<form
+				className='form-stack'
+				onSubmit={(event) => {
+					event.preventDefault();
+					if (title.trim() && !mutation.isPending) mutation.mutate();
+				}}>
+				<p className='muted'>
+					Tell the team what you need. You can follow progress here.
+				</p>
+				<Field label='Title'>
+					<input
+						required
+						maxLength={240}
+						placeholder='What would you like to request?'
+						value={title}
+						onChange={(event) => setTitle(event.target.value)}
+						disabled={mutation.isPending}
+					/>
+				</Field>
+				<Field
+					label='Description (optional)'
+					hint='Share any context that would help the team.'>
+					<textarea
+						rows={5}
+						maxLength={20000}
+						placeholder='Describe what you need and why it matters…'
+						value={description}
+						onChange={(event) => setDescription(event.target.value)}
+						disabled={mutation.isPending}
+					/>
+				</Field>
+				{mutation.error && <Message error>{mutation.error.message}</Message>}
+				<div className='form-actions'>
+					<button
+						type='button'
+						className='button'
+						onClick={onClose}
+						disabled={mutation.isPending}>
+						Cancel
+					</button>
+					<button
+						className='button primary'
+						disabled={!title.trim() || mutation.isPending}>
+						{mutation.isPending ? 'Submitting…' : 'Submit request'}
+					</button>
+				</div>
+			</form>
+		</Modal>
 	);
 }
 
