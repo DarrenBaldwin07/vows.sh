@@ -8,6 +8,8 @@ import {
 	SelectValue,
 } from '@repo/ui/components/select';
 
+import { LinearIssueLink } from './linear-issue-link';
+import { RequestTimeline } from './request-timeline';
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -121,7 +123,10 @@ export function RequestEditor({
 					</Field>
 					<div className='form-grid'>
 						<Field label='Status'>
-							<Select name='status' defaultValue={row?.status ?? 'todo'}>
+							<Select
+								key={row?.status ?? 'todo'}
+								name='status'
+								defaultValue={row?.status ?? 'todo'}>
 								<SelectTrigger aria-label='Status'>
 									<SelectValue />
 								</SelectTrigger>
@@ -278,21 +283,20 @@ export function RequestEditor({
 						{notify.error && <Message error>{notify.error.message}</Message>}
 						{notify.isSuccess && <Message>Update queued.</Message>}
 					</div>
-					{row?.events && row.events.length > 0 && (
-						<details className='history'>
-							<summary>Status history</summary>
-							{row.events.map((e) => (
-								<div key={e.id}>
-									<span>
-										{e.fromStatus
-											? `${statusLabels[e.fromStatus]} → `
-											: 'Created as '}
-										{statusLabels[e.toStatus]}
-									</span>
-									<time>{dateLabel(e.createdAt)}</time>
-								</div>
-							))}
-						</details>
+					{requestId && (
+						<>
+							<LinearIssueLink
+								key={`${requestId}:${row?.linear?.url ?? ''}`}
+								requestId={requestId}
+								customerId={customerId}
+								organizationId={orgId}
+								link={row?.linear ?? null}
+							/>
+							<RequestTimeline
+								path={`/manage/requests/${requestId}/events`}
+								organizationId={orgId}
+							/>
+						</>
 					)}
 					{save.error && <Message error>{save.error.message}</Message>}
 					<div className='form-actions'>

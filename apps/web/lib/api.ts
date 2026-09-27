@@ -104,6 +104,12 @@ export type VowRequest = {
 	slackUrl?: string | null;
 };
 export type RequestDetail = VowRequest & {
+	linear: {
+		url: string;
+		identifier: string;
+		stateName: string;
+		disconnectedAt: string | null;
+	} | null;
 	events: {
 		id: string;
 		fromStatus: Status | null;

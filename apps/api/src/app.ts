@@ -1,3 +1,4 @@
+import { linearRoutes } from './routes/linear.js';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
@@ -60,6 +61,7 @@ export function createApp(database: () => Database = getDb) {
 	app.route('/', sharingRoutes);
 	app.route('/', requestsRoutes);
 	app.route('/', integrationsRoutes);
+	app.route('/', linearRoutes);
 	app.route('/manage/slack', slackRoutes);
 	return app;
 }

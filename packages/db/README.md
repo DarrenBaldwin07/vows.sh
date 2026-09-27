@@ -33,3 +33,10 @@ no shared product data. Create a workspace and customers through the app.
 
 Build this package before directly running API scripts: `pnpm --filter @repo/db build`.
 Root `pnpm dev` and `pnpm build` handle dependency build order automatically.
+
+Linear links are stored in `RequestLinearIssue` with composite tenant foreign
+keys. `LinearWebhook` is the durable inbound queue; issue timestamps prevent
+stale state application. `RequestEvent` retains status history and adds event
+kind, source, visibility, and field diffs. Migration 0007 also installs the
+`NotificationDelivery_audit` trigger so delivery changes and their audit events
+commit atomically, including cancellations outside the notification worker.

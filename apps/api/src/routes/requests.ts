@@ -1,3 +1,4 @@
+import { eventHistory } from '../services/event-history.js';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import {
@@ -10,6 +11,7 @@ import {
 	requestEvent,
 	integration,
 	requestSlackThread,
+	requestLinearIssue,
 	notificationDelivery,
 } from '@repo/db';
 import { identity, type Env } from '../context.js';
@@ -27,12 +29,27 @@ requestsRoutes.get('/manage/requests/:id', async (c) => {
 		.select({ permalink: requestSlackThread.permalink })
 		.from(requestSlackThread)
 		.where(eq(requestSlackThread.requestId, row.id));
+	const [linear] = await c
+		.get('db')
+		.select({
+			url: requestLinearIssue.url,
+			identifier: requestLinearIssue.identifier,
+			stateName: requestLinearIssue.stateName,
+			disconnectedAt: integration.disconnectedAt,
+		})
+		.from(requestLinearIssue)
+		.innerJoin(
+			integration,
+			eq(integration.id, requestLinearIssue.integrationId)
+		)
+		.where(eq(requestLinearIssue.requestId, row.id));
 	const events = await c
 		.get('db')
 		.select()
 		.from(requestEvent)
 		.where(eq(requestEvent.requestId, row.id))
-		.orderBy(desc(requestEvent.createdAt));
+		.orderBy(desc(requestEvent.createdAt))
+		.limit(50);
 	const deliveries = await c
 		.get('db')
 		.select({
@@ -49,6 +66,7 @@ requestsRoutes.get('/manage/requests/:id', async (c) => {
 		...row,
 		slackUrl: thread?.permalink ?? null,
 		events,
+		linear: linear ?? null,
 		deliveries,
 	});
 });
@@ -115,6 +133,8 @@ requestsRoutes.post('/manage/requests/:id/notify', async (c) => {
 			.values({
 				requestId: row.id,
 				actorId: identity(c).userId,
+				kind: 'notification_requested',
+				public: false,
 				fromStatus: 'done',
 				toStatus: 'done',
 			})
@@ -124,4 +144,11 @@ requestsRoutes.post('/manage/requests/:id/notify', async (c) => {
 			.values({ requestId: row.id, eventId: event!.id, threadId: thread.id });
 	});
 	return c.json({ ok: true });
+});
+
+requestsRoutes.get('/manage/requests/:id/events', async (c) => {
+	const row = await findRequest(c, c.req.param('id'));
+	return c.json(
+		await eventHistory(c.get('db'), row.id, false, c.req.query('cursor'))
+	);
 });

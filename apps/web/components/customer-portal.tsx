@@ -1,4 +1,5 @@
 'use client';
+import { RequestTimeline } from './request-timeline';
 import Image from 'next/image';
 import { useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
@@ -39,6 +40,7 @@ export function CustomerPortal({
 		: encodeURIComponent(token);
 	const { userId, isLoaded } = useAuth();
 	const [creating, setCreating] = useState(false);
+	const [expanded, setExpanded] = useState<Set<string>>(new Set());
 	const [submitted, setSubmitted] = useState(false);
 	const query = useQuery({
 		queryKey: ['portal', locator, userId],
@@ -152,7 +154,18 @@ export function CustomerPortal({
 												{statusLabels[status]} <span>{rows.length}</span>
 											</h2>
 											{rows.map((row) => (
-												<details className='portal-request' key={row.id}>
+												<details
+													className='portal-request'
+													key={row.id}
+													onToggle={(event) => {
+														const open = event.currentTarget.open;
+														setExpanded((previous) => {
+															const next = new Set(previous);
+															if (open) next.add(row.id);
+															else next.delete(row.id);
+															return next;
+														});
+													}}>
 													<summary>
 														<span
 															className='portal-status-icon'
@@ -186,6 +199,12 @@ export function CustomerPortal({
 														<small>
 															Last updated {dateLabel(row.updatedAt)}
 														</small>
+														{expanded.has(row.id) && (
+															<RequestTimeline
+																path={`/portal/${locator}/requests/${row.id}/events`}
+																userId={userId}
+															/>
+														)}
 													</div>
 												</details>
 											))}

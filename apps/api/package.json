@@ -10,7 +10,7 @@
 		"check-types": "tsc --noEmit",
 		"lint": "oxlint --config ../../.oxlintrc.json --deny-warnings .",
 		"worker": "tsx src/run-worker.ts",
-		"test": "tsx --test test/*.test.ts",
+		"test": "tsx --test --test-concurrency=1 test/*.test.ts",
 		"test:isolated": "node test/run-isolated.mjs",
 		"dev:worker": "tsx watch src/run-worker.ts",
 		"start:worker": "node dist/run-worker.js"

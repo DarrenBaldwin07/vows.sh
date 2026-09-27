@@ -1,3 +1,4 @@
+import { eventHistory } from '../services/event-history.js';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import {
@@ -165,6 +166,8 @@ async function createPortalRequest(c: ApiContext) {
 		await tx.insert(requestEvent).values({
 			requestId: created!.id,
 			actorId: identity(c).userId,
+			kind: 'created',
+			source: 'customer',
 			fromStatus: null,
 			toStatus: 'todo',
 		});
@@ -180,3 +183,26 @@ portalRoutes.post('/portal/:workspace/:customer/requests', createPortalRequest);
 portalRoutes.post('/portal/:token/requests', createPortalRequest);
 portalRoutes.get('/portal/:workspace/:customer', renderPortal);
 portalRoutes.get('/portal/:token', renderPortal);
+
+async function portalEvents(c: ApiContext) {
+	const { customerId } = await authorizePortal(c);
+	const [row] = await c
+		.get('db')
+		.select({ id: request.id })
+		.from(request)
+		.where(
+			and(
+				eq(request.id, c.req.param('id')!),
+				eq(request.customerId, customerId)
+			)
+		);
+	if (!row) throw new HTTPException(404, { message: 'Request not found.' });
+	return c.json(
+		await eventHistory(c.get('db'), row.id, true, c.req.query('cursor'))
+	);
+}
+portalRoutes.get(
+	'/portal/:workspace/:customer/requests/:id/events',
+	portalEvents
+);
+portalRoutes.get('/portal/:token/requests/:id/events', portalEvents);

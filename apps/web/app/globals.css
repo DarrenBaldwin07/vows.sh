@@ -2447,3 +2447,157 @@ h3 {
 .portal-address-form > .form-grid {
 	width: 100%;
 }
+
+.integrations-list {
+	display: flex;
+	flex-direction: column;
+	gap: 24px;
+}
+.linear-mark {
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	background: #f4f3ff;
+	color: #6257ca;
+}
+.linear-setup-form {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 12px;
+	margin-top: 16px;
+}
+.linear-setup-form > button {
+	align-self: flex-start;
+}
+.linear-link-actions {
+	display: flex;
+	gap: 8px;
+}
+.request-timeline {
+	padding-top: 18px;
+	border-top: 1px solid #e5e5e5;
+	margin-top: 12px;
+}
+.timeline-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 18px;
+}
+.timeline-heading h3 {
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	color: #404040;
+}
+.timeline-heading > span {
+	font-size: 10px;
+	color: #737373;
+}
+.timeline-list {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+.timeline-event {
+	position: relative;
+	display: flex;
+	gap: 12px;
+	padding-bottom: 22px;
+}
+.timeline-event:not(:last-child)::before {
+	content: '';
+	position: absolute;
+	left: 10px;
+	top: 22px;
+	bottom: 0;
+	width: 1px;
+	background: #e5e5e5;
+}
+.timeline-marker {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 22px;
+	height: 22px;
+	flex-shrink: 0;
+	border: 1px solid #e5e5e5;
+	border-radius: 50%;
+	color: #737373;
+	background: #fff;
+}
+.timeline-complete {
+	color: #218358;
+	border-color: #cce5d6;
+	background: #f0faf4;
+}
+.timeline-content {
+	min-width: 0;
+	padding-top: 1px;
+	flex: 1;
+}
+.timeline-content .timeline-title {
+	margin: 0;
+	font-size: 12px;
+	line-height: 20px;
+	color: #404040;
+}
+.timeline-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 3px;
+	color: #737373;
+	font-size: 10px;
+	line-height: 16px;
+}
+.timeline-private {
+	display: inline-block;
+	font-size: 9px;
+	padding: 0 5px;
+	margin-left: 8px;
+	border-radius: 4px;
+	background: #f5f5f5;
+	color: #737373;
+}
+.timeline-changes {
+	margin-top: 8px;
+	font-size: 11px;
+	color: #737373;
+}
+.timeline-changes summary {
+	cursor: pointer;
+}
+.timeline-changes > div {
+	margin-top: 8px;
+	background: #fafafa;
+	padding: 10px;
+	border-radius: 6px;
+}
+.timeline-changes p {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	margin: 0 0 8px;
+	font-size: 11px;
+}
+.timeline-changes p > span {
+	display: block;
+	font-weight: 600;
+	color: #737373;
+	margin-bottom: 3px;
+}
+
+.integration-card > .linear-status-mapping {
+	margin-top: 16px;
+	margin-bottom: 0;
+	font-size: 11px;
+}
+.timeline-changes > div > strong {
+	display: block;
+	margin-bottom: 8px;
+	color: #404040;
+}

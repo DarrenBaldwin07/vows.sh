@@ -1,3 +1,4 @@
+import { createLinearWebhookRoutes } from './routes/linear-webhooks.js';
 import { Hono } from 'hono';
 import { agentError } from './agent-auth.js';
 import { publicOrigin } from './middleware/public-origin.js';
@@ -16,6 +17,7 @@ export function createHttpApp(
 	server.use('*', publicOrigin);
 	server.route('/', oauthRoutes);
 	server.route('/', mcpRoutes);
+	server.route('/', createLinearWebhookRoutes());
 	server.route('/', createApiRoutes(options));
 	return server;
 }

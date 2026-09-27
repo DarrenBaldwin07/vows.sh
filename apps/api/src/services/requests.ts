@@ -1,3 +1,4 @@
+import { recordEvent, recordRequestChanges } from './request-events.js';
 import { HTTPException } from 'hono/http-exception';
 import {
 	and,
@@ -6,18 +7,12 @@ import {
 	inArray,
 	customer,
 	request,
-	requestEvent,
 	integration,
 	requestSlackThread,
 	notificationDelivery,
 } from '@repo/db';
 import { getCustomer, identity, type ApiContext } from '../context.js';
-import {
-	parseSlackLink,
-	requestInput,
-	shouldNotify,
-	statusInput,
-} from '../validation.js';
+import { parseSlackLink, requestInput, statusInput } from '../validation.js';
 
 export async function findRequest(c: ApiContext, id: string) {
 	const [row] = await c
@@ -154,6 +149,19 @@ export async function saveRequest(
 						)
 					);
 			}
+			if ((oldThread?.permalink ?? null) !== (parsedThread?.permalink ?? null))
+				await recordEvent(
+					tx,
+					result,
+					{ actorId: identity(c).userId, source: c.env.eventSource ?? 'team' },
+					parsedThread ? 'slack_linked' : 'slack_unlinked',
+					{
+						slackUrl: {
+							before: oldThread?.permalink ?? null,
+							after: parsedThread?.permalink ?? null,
+						},
+					}
+				);
 			if (parsedThread && connection) {
 				await tx
 					.insert(requestSlackThread)
@@ -173,62 +181,11 @@ export async function saveRequest(
 					.where(eq(requestSlackThread.requestId, result.id));
 			}
 		}
-		if (!existing || existing.status !== status) {
-			const [event] = await tx
-				.insert(requestEvent)
-				.values({
-					requestId: result.id,
-					actorId: identity(c).userId,
-					fromStatus: existing?.status ?? null,
-					toStatus: status,
-				})
-				.returning();
-			const [thread] = await tx
-				.select()
-				.from(requestSlackThread)
-				.where(eq(requestSlackThread.requestId, result.id));
-			const prior = await tx
-				.select({ id: notificationDelivery.id })
-				.from(notificationDelivery)
-				.where(
-					and(
-						eq(notificationDelivery.requestId, result.id),
-						inArray(notificationDelivery.status, [
-							'sent',
-							'sending',
-							'uncertain',
-							'pending',
-						])
-					)
-				);
-			if (
-				shouldNotify({
-					previousStatus: existing?.status ?? '',
-					status,
-					enabled: Boolean(
-						connection && (result.notifyOnDone ?? connection.notifyOnDone)
-					),
-					hasThread: Boolean(thread),
-					previouslyDelivered: prior.length > 0,
-				})
-			) {
-				await tx.insert(notificationDelivery).values({
-					requestId: result.id,
-					eventId: event!.id,
-					threadId: thread!.id,
-				});
-			}
-			if (status !== 'done')
-				await tx
-					.update(notificationDelivery)
-					.set({ status: 'canceled', lastError: 'Request reopened.' })
-					.where(
-						and(
-							eq(notificationDelivery.requestId, result.id),
-							inArray(notificationDelivery.status, ['pending', 'sending'])
-						)
-					);
-		}
+		await recordRequestChanges(tx, existing, result, {
+			actorId: identity(c).userId,
+			source: c.env.eventSource ?? 'team',
+		});
+
 		await tx
 			.update(customer)
 			.set({ updatedAt: new Date() })

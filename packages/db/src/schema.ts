@@ -133,6 +133,13 @@ export const requestEvent = pgTable(
 			.notNull()
 			.references(() => request.id, { onDelete: 'cascade' }),
 		actorId: text('actorId').notNull(),
+		kind: text('kind').notNull().default('status_changed'),
+		source: text('source').notNull().default('team'),
+		public: boolean('public').notNull().default(true),
+		changes:
+			jsonb('changes').$type<
+				Record<string, { before: unknown; after: unknown }>
+			>(),
 		fromStatus: requestStatus('fromStatus'),
 		toStatus: requestStatus('toStatus').notNull(),
 		createdAt: createdAt(),
@@ -264,3 +271,52 @@ export const portalPath = pgTable('PortalPath', {
 		.notNull()
 		.references(() => customerShareLink.id, { onDelete: 'cascade' }),
 });
+
+export const requestLinearIssue = pgTable(
+	'RequestLinearIssue',
+	{
+		id: id(),
+		organizationId: text('organizationId').notNull(),
+		requestId: text('requestId').notNull().unique(),
+		integrationId: text('integrationId').notNull(),
+		issueId: text('issueId').notNull(),
+		identifier: text('identifier').notNull(),
+		url: text('url').notNull(),
+		stateName: text('stateName').notNull(),
+		stateType: text('stateType').notNull(),
+		issueUpdatedAt: timestamp('issueUpdatedAt', {
+			withTimezone: true,
+		}).notNull(),
+	},
+	(t) => [
+		foreignKey({
+			columns: [t.organizationId, t.requestId],
+			foreignColumns: [request.organizationId, request.id],
+		}).onDelete('cascade'),
+		foreignKey({
+			columns: [t.organizationId, t.integrationId],
+			foreignColumns: [integration.organizationId, integration.id],
+		}).onDelete('cascade'),
+		index().on(t.integrationId, t.issueId),
+	]
+);
+
+export const linearWebhook = pgTable(
+	'LinearWebhook',
+	{
+		id: text('id').primaryKey(),
+		integrationId: text('integrationId')
+			.notNull()
+			.references(() => integration.id, { onDelete: 'cascade' }),
+		issueId: text('issueId').notNull(),
+		issueUpdatedAt: timestamp('issueUpdatedAt', {
+			withTimezone: true,
+		}).notNull(),
+		stateName: text('stateName').notNull(),
+		stateType: text('stateType').notNull(),
+		action: text('action').notNull(),
+		receivedAt: createdAt('receivedAt'),
+		processedAt: date('processedAt'),
+	},
+	(t) => [index().on(t.processedAt, t.receivedAt)]
+);

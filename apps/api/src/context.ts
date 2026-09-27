@@ -11,6 +11,7 @@ export type Identity = {
 export type Env = {
 	Bindings: {
 		identity?: Identity;
+		eventSource?: 'team' | 'agent';
 		members?: () => Promise<Member[]>;
 		portalAssignees?: (
 			organizationId: string,

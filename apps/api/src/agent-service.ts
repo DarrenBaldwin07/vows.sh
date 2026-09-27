@@ -101,7 +101,7 @@ async function executeAgentCallUnchecked(
 				},
 				...(body === undefined ? {} : { body: JSON.stringify(body) }),
 			}),
-			{ ...bindings, identity: principal.identity }
+			{ ...bindings, identity: principal.identity, eventSource: 'agent' }
 		);
 		const result = await res.json();
 		if (!res.ok)

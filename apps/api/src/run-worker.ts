@@ -1,3 +1,4 @@
+import { processLinearWebhooks } from './services/linear-sync.js';
 import { closeDb } from '@repo/db';
 import { deliverNotifications } from './worker.js';
 let stopped = false;
@@ -6,6 +7,14 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const)
 		stopped = true;
 	});
 while (!stopped) {
+	try {
+		await processLinearWebhooks();
+	} catch (error) {
+		console.error(
+			'Linear sync failed',
+			error instanceof Error ? error.name : 'Unknown error'
+		);
+	}
 	try {
 		await deliverNotifications();
 	} catch (error) {

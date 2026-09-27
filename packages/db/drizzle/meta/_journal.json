@@ -50,6 +50,13 @@
 			"when": 1790524180249,
 			"tag": "0006_nappy_menace",
 			"breakpoints": true
+		},
+		{
+			"idx": 7,
+			"version": "7",
+			"when": 1790539212379,
+			"tag": "0007_cynical_jubilee",
+			"breakpoints": true
 		}
 	]
 }
