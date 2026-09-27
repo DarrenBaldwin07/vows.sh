@@ -5,8 +5,7 @@ import {
 	eq,
 	desc,
 	isNull,
-	inArray,
-	or,
+	sql,
 	customer,
 	organization,
 	customerAccess,
@@ -17,6 +16,7 @@ import {
 } from '@repo/db';
 import { identity, type Env, type ApiContext } from '../context.js';
 import { portalRequestInput } from '../validation.js';
+import { matchesEmailAccess } from '../services/email-access.js';
 
 export const portalRoutes = new Hono<Env>();
 async function authorizePortal(c: ApiContext) {
@@ -53,7 +53,7 @@ async function authorizePortal(c: ApiContext) {
 		throw new HTTPException(404, {
 			message: 'This link is unavailable. Ask your contact for a new link.',
 		});
-	const [access] = user.verifiedEmails.length
+	const entries = user.verifiedEmails.length
 		? await c
 				.get('db')
 				.select()
@@ -61,30 +61,35 @@ async function authorizePortal(c: ApiContext) {
 				.where(
 					and(
 						eq(customerAccess.customerId, link.customerId),
-						isNull(customerAccess.revokedAt),
-						or(
-							isNull(customerAccess.clerkUserId),
-							eq(customerAccess.clerkUserId, user.userId)
-						),
-						inArray(
-							customerAccess.email,
-							user.verifiedEmails.map((e) => e.toLowerCase())
-						)
+						isNull(customerAccess.revokedAt)
 					)
 				)
 		: [];
-	if (!access || (access.clerkUserId && access.clerkUserId !== user.userId))
+	const access = entries.find((entry) => matchesEmailAccess(entry, user));
+	if (!access)
 		throw new HTTPException(403, {
 			message:
-				'This account does not have access. Sign in with an invited, verified email or ask your contact to add you.',
+				'This account does not have access. Sign in with an allowed, verified email or ask your contact to add you.',
 		});
-	await c
-		.get('db')
-		.update(customerAccess)
-		.set({ clerkUserId: user.userId })
-		.where(
-			and(eq(customerAccess.id, access.id), isNull(customerAccess.clerkUserId))
-		);
+	// Shared rules remain available to every matching verified user.
+	if (access.kind === 'email') {
+		const claimed = await c
+			.get('db')
+			.update(customerAccess)
+			.set({ clerkUserId: user.userId })
+			.where(
+				and(
+					eq(customerAccess.id, access.id),
+					isNull(customerAccess.revokedAt),
+					sql`(${customerAccess.clerkUserId} is null or ${customerAccess.clerkUserId} = ${user.userId})`
+				)
+			)
+			.returning({ id: customerAccess.id });
+		if (!claimed.length)
+			throw new HTTPException(403, {
+				message: 'This email invitation is no longer available.',
+			});
+	}
 	const [owner] = await c
 		.get('db')
 		.select({

@@ -43,6 +43,13 @@
 			"when": 1790193043594,
 			"tag": "0005_spicy_puff_adder",
 			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "7",
+			"when": 1790524180249,
+			"tag": "0006_nappy_menace",
+			"breakpoints": true
 		}
 	]
 }

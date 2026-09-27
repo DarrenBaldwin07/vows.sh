@@ -29,6 +29,7 @@
 		"@modelcontextprotocol/server": "^2.0.0",
 		"@repo/db": "workspace:*",
 		"hono": "^4.13.8",
+		"re2js": "^2.8.6",
 		"zod": "^4.0.0"
 	}
 }

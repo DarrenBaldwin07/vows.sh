@@ -69,11 +69,14 @@ export const customerAccess = pgTable(
 			.notNull()
 			.references(() => customer.id, { onDelete: 'cascade' }),
 		email: text('email').notNull(),
+		kind: text('kind', { enum: ['email', 'domain', 'regex'] })
+			.notNull()
+			.default('email'),
 		clerkUserId: text('clerkUserId'),
 		createdAt: createdAt(),
 		revokedAt: date('revokedAt'),
 	},
-	(t) => [unique().on(t.customerId, t.email)]
+	(t) => [unique().on(t.customerId, t.kind, t.email)]
 );
 export const customerShareLink = pgTable(
 	'CustomerShareLink',

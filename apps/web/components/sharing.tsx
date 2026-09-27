@@ -5,9 +5,10 @@ import { useAuth } from '@clerk/nextjs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Field, Loading, Message, Modal } from './ui';
+type AccessKind = 'email' | 'domain' | 'regex';
 type Sharing = {
 	link: { id: string; token: string; path: string } | null;
-	access: { id: string; email: string; accepted: boolean }[];
+	access: { id: string; email: string; kind: AccessKind; accepted: boolean }[];
 };
 export function SharingDialog({
 	customerId,
@@ -19,6 +20,7 @@ export function SharingDialog({
 	const { orgId } = useAuth();
 	const cache = useQueryClient();
 	const [message, setMessage] = useState('');
+	const [accessKind, setAccessKind] = useState<AccessKind>('email');
 	const path = `/manage/customers/${customerId}`;
 	const query = useQuery({
 		queryKey: ['sharing', orgId, customerId],
@@ -51,7 +53,9 @@ export function SharingDialog({
 	async function copy() {
 		try {
 			await navigator.clipboard.writeText(link);
-			setMessage('Link copied. Share it with the people listed below.');
+			setMessage(
+				'Link copied. Share it with people allowed by the addresses or rules below.'
+			);
 		} catch {
 			setMessage('Select the link below and copy it manually.');
 		}
@@ -63,7 +67,7 @@ export function SharingDialog({
 			{
 				suffix: 'access',
 				method: 'POST',
-				body: { email: new FormData(form).get('email') },
+				body: { email: new FormData(form).get('email'), kind: accessKind },
 			},
 			{ onSuccess: () => form.reset() }
 		);
@@ -72,7 +76,8 @@ export function SharingDialog({
 		<Modal title='Share customer portal' onClose={onClose}>
 			<div className='form-stack'>
 				<p className='muted'>
-					Customers must sign in with one of the verified email addresses below.
+					Customers must sign in with a verified email that matches an address
+					or rule below.
 				</p>
 				{query.isPending ? (
 					<Loading variant='form' />
@@ -182,17 +187,25 @@ export function SharingDialog({
 							)}
 						</div>
 						<div>
-							<h3>People with access</h3>
+							<h3>Portal access</h3>
 							<p className='muted small'>
-								Adding an address grants access; share the portal link with them
-								directly.
+								Allowed people can view requests and submit new ones. Share the
+								portal link with them directly; no invitation email is sent.
 							</p>
 							{query.data?.access.map((person) => (
 								<div className='access-row' key={person.id}>
 									<span>
-										{person.email}
+										{person.kind === 'domain'
+											? `@${person.email}`
+											: person.email}
 										<small>
-											{person.accepted ? 'Has visited' : 'Not visited yet'}
+											{person.kind === 'email'
+												? person.accepted
+													? 'Has visited'
+													: 'Not visited yet'
+												: person.kind === 'domain'
+													? 'Everyone at this domain'
+													: 'Email regex'}
 										</small>
 									</span>
 									<button
@@ -208,19 +221,56 @@ export function SharingDialog({
 									</button>
 								</div>
 							))}
+							<Field label='Access type'>
+								<select
+									value={accessKind}
+									disabled={change.isPending}
+									onChange={(event) => {
+										setAccessKind(event.target.value as AccessKind);
+										change.reset();
+									}}>
+									<option value='email'>Email address</option>
+									<option value='domain'>Email domain</option>
+									<option value='regex'>Regex</option>
+								</select>
+							</Field>
 							<form onSubmit={addAccess} className='input-action access-form'>
-								<Field label='Email address'>
+								<Field
+									label={
+										accessKind === 'email'
+											? 'Email address'
+											: accessKind === 'domain'
+												? 'Email domain'
+												: 'Email regex'
+									}>
 									<input
-										type='email'
+										key={accessKind}
+										type={accessKind === 'email' ? 'email' : 'text'}
+										maxLength={accessKind === 'regex' ? 500 : 320}
+										autoCapitalize='none'
+										spellCheck={false}
 										name='email'
 										required
-										placeholder='person@acme.com'
+										placeholder={
+											accessKind === 'email'
+												? 'person@acme.com'
+												: accessKind === 'domain'
+													? '@tembo.io'
+													: '.*@tembo\\.io'
+										}
 									/>
 								</Field>
 								<button className='button' disabled={change.isPending}>
-									Add person
+									{accessKind === 'email' ? 'Add person' : 'Add rule'}
 								</button>
 							</form>
+							{accessKind !== 'email' && (
+								<p className='muted small'>
+									{accessKind === 'domain'
+										? 'Allows everyone with a verified email at this exact domain, excluding subdomains.'
+										: 'Matches the entire verified email, ignoring case. Use RE2 syntax without / delimiters; for example, .*@tembo\\.io'}
+								</p>
+							)}
 						</div>
 					</>
 				)}

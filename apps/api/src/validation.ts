@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { compileEmailPattern } from './services/email-access.js';
 
 export const statuses = [
 	'todo',
@@ -63,9 +64,45 @@ export const requestPatchInput = z
 		slackUrl: requestInput.shape.slackUrl.removeDefault().optional(),
 	})
 	.strict();
-export const accessInput = z.object({
-	email: z.email().trim().toLowerCase().max(320),
-});
+export const accessInput = z.discriminatedUnion('kind', [
+	z.object({
+		kind: z.literal('email').default('email'),
+		email: z.string().trim().toLowerCase().max(320).pipe(z.email()),
+	}),
+	z.object({
+		kind: z.literal('domain'),
+		email: z
+			.string()
+			.trim()
+			.toLowerCase()
+			.transform((value) => value.replace(/^\*?@/, ''))
+			.pipe(
+				z
+					.string()
+					.max(253)
+					.regex(
+						/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/,
+						'Enter a domain such as tembo.io or @tembo.io.'
+					)
+			),
+	}),
+	z.object({
+		kind: z.literal('regex'),
+		email: z
+			.string()
+			.trim()
+			.min(1)
+			.max(500)
+			.refine((pattern) => {
+				try {
+					compileEmailPattern(pattern);
+					return true;
+				} catch {
+					return false;
+				}
+			}, 'Enter a valid RE2 regex without / delimiters or flags.'),
+	}),
+]);
 export const statusInput = z.object({ status: z.enum(statuses) });
 
 // Only Slack message permalinks, never arbitrary URLs or network fetches.

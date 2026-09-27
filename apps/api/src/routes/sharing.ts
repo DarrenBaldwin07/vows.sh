@@ -25,6 +25,7 @@ sharingRoutes.get('/manage/customers/:id/sharing', async (c) => {
 		.select({
 			id: customerAccess.id,
 			email: customerAccess.email,
+			kind: customerAccess.kind,
 			accepted: sql<boolean>`${customerAccess.clerkUserId} is not null`,
 		})
 		.from(customerAccess)
@@ -67,13 +68,17 @@ sharingRoutes.delete('/manage/customers/:id/sharing', async (c) => {
 sharingRoutes.post('/manage/customers/:id/access', async (c) => {
 	admin(c);
 	const owner = await getCustomer(c, c.req.param('id'));
-	const { email } = accessInput.parse(await c.req.json());
+	const { email, kind } = accessInput.parse(await c.req.json());
 	await c
 		.get('db')
 		.insert(customerAccess)
-		.values({ customerId: owner.id, email })
+		.values({ customerId: owner.id, email, kind })
 		.onConflictDoUpdate({
-			target: [customerAccess.customerId, customerAccess.email],
+			target: [
+				customerAccess.customerId,
+				customerAccess.kind,
+				customerAccess.email,
+			],
 			set: { revokedAt: null, clerkUserId: null },
 		});
 	return c.json({ ok: true });
