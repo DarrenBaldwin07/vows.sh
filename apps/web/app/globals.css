@@ -2448,6 +2448,44 @@ h3 {
 	width: 100%;
 }
 
+.integrations-content {
+	max-width: 780px;
+	margin-inline: auto;
+}
+.integrations-header {
+	margin-bottom: 24px;
+}
+.integrations-header p {
+	margin-top: 8px;
+}
+.integrations-search {
+	position: relative;
+	margin-bottom: 24px;
+}
+.integrations-search > svg {
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: #737373;
+	pointer-events: none;
+}
+.integrations-search .search-input {
+	width: 100%;
+	height: 38px;
+	padding-left: 36px;
+}
+.integrations-content .integration-card {
+	max-width: none;
+}
+.integrations-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+	padding: 40px 20px;
+	color: #737373;
+}
 .integrations-list {
 	display: flex;
 	flex-direction: column;
