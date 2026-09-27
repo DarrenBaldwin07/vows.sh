@@ -1,4 +1,11 @@
 'use client';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@repo/ui/components/select';
 import { Copy } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '@clerk/nextjs';
@@ -221,56 +228,63 @@ export function SharingDialog({
 									</button>
 								</div>
 							))}
-							<Field label='Access type'>
-								<select
-									value={accessKind}
-									disabled={change.isPending}
-									onChange={(event) => {
-										setAccessKind(event.target.value as AccessKind);
-										change.reset();
-									}}>
-									<option value='email'>Email address</option>
-									<option value='domain'>Email domain</option>
-									<option value='regex'>Regex</option>
-								</select>
-							</Field>
-							<form onSubmit={addAccess} className='input-action access-form'>
-								<Field
-									label={
-										accessKind === 'email'
-											? 'Email address'
-											: accessKind === 'domain'
-												? 'Email domain'
-												: 'Email regex'
-									}>
-									<input
-										key={accessKind}
-										type={accessKind === 'email' ? 'email' : 'text'}
-										maxLength={accessKind === 'regex' ? 500 : 320}
-										autoCapitalize='none'
-										spellCheck={false}
-										name='email'
-										required
-										placeholder={
-											accessKind === 'email'
-												? 'person@acme.com'
-												: accessKind === 'domain'
-													? '@tembo.io'
-													: '.*@tembo\\.io'
-										}
-									/>
+							<form onSubmit={addAccess} className='access-form'>
+								<Field label='Access type'>
+									<Select
+										value={accessKind}
+										disabled={change.isPending}
+										onValueChange={(value) => {
+											setAccessKind(value as AccessKind);
+											change.reset();
+										}}>
+										<SelectTrigger aria-label='Access type'>
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent position='popper'>
+											<SelectItem value='email'>Email address</SelectItem>
+											<SelectItem value='domain'>Email domain</SelectItem>
+											<SelectItem value='regex'>Regex</SelectItem>
+										</SelectContent>
+									</Select>
 								</Field>
-								<button className='button' disabled={change.isPending}>
-									{accessKind === 'email' ? 'Add person' : 'Add rule'}
-								</button>
+								<div className='input-action'>
+									<Field
+										label={
+											accessKind === 'email'
+												? 'Email address'
+												: accessKind === 'domain'
+													? 'Email domain'
+													: 'Email regex'
+										}>
+										<input
+											key={accessKind}
+											type={accessKind === 'email' ? 'email' : 'text'}
+											maxLength={accessKind === 'regex' ? 500 : 320}
+											autoCapitalize='none'
+											spellCheck={false}
+											name='email'
+											required
+											placeholder={
+												accessKind === 'email'
+													? 'person@acme.com'
+													: accessKind === 'domain'
+														? '@tembo.io'
+														: '.*@tembo\\.io'
+											}
+										/>
+									</Field>
+									<button className='button' disabled={change.isPending}>
+										{accessKind === 'email' ? 'Add person' : 'Add rule'}
+									</button>
+								</div>
+								{accessKind !== 'email' && (
+									<p className='muted small'>
+										{accessKind === 'domain'
+											? 'Allows everyone with a verified email at this exact domain, excluding subdomains.'
+											: 'Matches the entire verified email, ignoring case. Use RE2 syntax without / delimiters; for example, .*@tembo\\.io'}
+									</p>
+								)}
 							</form>
-							{accessKind !== 'email' && (
-								<p className='muted small'>
-									{accessKind === 'domain'
-										? 'Allows everyone with a verified email at this exact domain, excluding subdomains.'
-										: 'Matches the entire verified email, ignoring case. Use RE2 syntax without / delimiters; for example, .*@tembo\\.io'}
-								</p>
-							)}
 						</div>
 					</>
 				)}

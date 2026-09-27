@@ -914,6 +914,9 @@ h3 {
 	margin-top: 3px;
 }
 .access-form {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
 	margin-top: 16px;
 }
 .history {
