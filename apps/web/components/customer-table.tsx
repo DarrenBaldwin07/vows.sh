@@ -1,4 +1,32 @@
 import { Skeleton } from './ui';
+import { Plus } from 'lucide-react';
+
+export function CustomersPageLoading() {
+	return (
+		<>
+			<div className='topbar'>
+				<h1 className='topbar-title'>Customers</h1>
+				<button
+					className='button primary icon-button'
+					aria-label='Add customer'
+					disabled>
+					<Plus size={14} aria-hidden='true' />
+				</button>
+			</div>
+			<div className='page-content customers-page'>
+				<div className='list-toolbar'>
+					<input
+						className='search-input'
+						aria-label='Search customers'
+						placeholder='Search customers…'
+						disabled
+					/>
+				</div>
+				<CustomerTableLoading />
+			</div>
+		</>
+	);
+}
 
 export function CustomerTableHeader() {
 	return (

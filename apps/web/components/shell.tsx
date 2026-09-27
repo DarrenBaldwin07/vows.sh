@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Loading } from './ui';
+import { CustomersPageLoading } from './customer-table';
 import { WorkspaceSwitcher } from './workspace-switcher';
 import { AccountMenu } from './account-menu';
 import { CommandMenu } from './command-menu';
@@ -77,7 +78,11 @@ export function Shell({ children }: { children: ReactNode }) {
 					<Loading variant='menu' rows={4} />
 				</aside>
 				<main className='main-content'>
-					<Loading variant='page' />
+					{pathname === '/customers' ? (
+						<CustomersPageLoading />
+					) : (
+						<Loading variant='page' />
+					)}
 				</main>
 			</div>
 		);
