@@ -43,6 +43,7 @@ export const requestInput = z.object({
 	completionNote: z.string().max(3000).default(''),
 	notifyOnDone: z.boolean().nullable().default(null),
 	slackUrl: z.string().max(2000).nullable().default(null),
+	linearUrl: z.string().trim().max(2000).nullable().default(null),
 });
 export const portalRequestInput = requestInput
 	.pick({

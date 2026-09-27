@@ -92,6 +92,7 @@ export function RequestEditor({
 					: data.get('assigneeId') || null,
 			completionNote: data.get('completionNote'),
 			slackUrl: data.get('slackUrl') || null,
+			...(!requestId ? { linearUrl: data.get('linearUrl') || null } : {}),
 			notifyOnDone:
 				data.get('notifyOnDone') === 'inherit'
 					? null
@@ -283,6 +284,21 @@ export function RequestEditor({
 						{notify.error && <Message error>{notify.error.message}</Message>}
 						{notify.isSuccess && <Message>Update queued.</Message>}
 					</div>
+					{!requestId && (
+						<div className='form-section'>
+							<h3>Linear issue</h3>
+							<Field
+								label='Linear issue URL'
+								hint='Optional. Connect Linear in Integrations first. The issue’s status will apply when you create this request.'>
+								<input
+									name='linearUrl'
+									type='url'
+									maxLength={2000}
+									placeholder='https://linear.app/team/issue/ENG-123/title'
+								/>
+							</Field>
+						</div>
+					)}
 					{requestId && (
 						<>
 							<LinearIssueLink

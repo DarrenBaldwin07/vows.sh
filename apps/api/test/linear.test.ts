@@ -19,6 +19,7 @@ import {
 	linearWebhook,
 	organization,
 	requestEvent,
+	request,
 	requestLinearIssue,
 } from '@repo/db';
 import type { Identity } from '../src/context.js';
@@ -183,6 +184,44 @@ test(
 				403
 			);
 			await json(await call('/manage/integrations/linear', 'POST', { apiKey }));
+			const createdWithLinear = await json(
+				await call(`/manage/customers/${customer.id}/requests`, 'POST', {
+					title: 'Linked during creation',
+					linearUrl: issue.url,
+				}),
+				201
+			);
+			assert.equal(createdWithLinear.status, 'in_progress');
+			const createdDetail = await json(
+				await call(`/manage/requests/${createdWithLinear.id}`)
+			);
+			assert.equal(createdDetail.linear.identifier, 'ENG-123');
+			const creationEvents = await db
+				.select()
+				.from(requestEvent)
+				.where(eq(requestEvent.requestId, createdWithLinear.id));
+			assert.ok(creationEvents.some((event) => event.kind === 'created'));
+			assert.ok(creationEvents.some((event) => event.kind === 'linear_linked'));
+			await db.delete(request).where(eq(request.id, createdWithLinear.id));
+			for (const url of [
+				'https://example.com/invalid',
+				'https://linear.app/other/issue/ENG-123/title',
+			]) {
+				const failed = await call(
+					`/manage/customers/${customer.id}/requests`,
+					'POST',
+					{
+						title: 'Invalid link must not create a request',
+						linearUrl: url,
+					}
+				);
+				assert.equal(failed.status, 400);
+				const partial = await db
+					.select()
+					.from(request)
+					.where(eq(request.title, 'Invalid link must not create a request'));
+				assert.equal(partial.length, 0);
+			}
 			let settings = await json(await call('/manage/integrations'));
 			assert.equal(settings.linear.webhookConfigured, false);
 			assert.ok(!JSON.stringify(settings).includes(apiKey));

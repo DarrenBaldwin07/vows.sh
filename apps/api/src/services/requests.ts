@@ -1,3 +1,5 @@
+import { lockLinear } from './linear-sync.js';
+import { prepareLinearLink, attachLinearIssue } from './linear-links.js';
 import { recordEvent, recordRequestChanges } from './request-events.js';
 import { HTTPException } from 'hono/http-exception';
 import {
@@ -70,7 +72,10 @@ export async function saveRequest(
 		throw new HTTPException(400, {
 			message: 'Connect Slack before attaching a thread.',
 		});
+	const linearLink =
+		!id && data?.linearUrl ? await prepareLinearLink(c, data.linearUrl) : null;
 	return db.transaction(async (tx) => {
+		if (linearLink) await lockLinear(tx, linearLink.connection.id);
 		const [existing] = id
 			? await tx
 					.select()
@@ -190,6 +195,14 @@ export async function saveRequest(
 			.update(customer)
 			.set({ updatedAt: new Date() })
 			.where(eq(customer.id, customerId));
+		if (linearLink) {
+			await attachLinearIssue(c, tx, result, linearLink);
+			const [linked] = await tx
+				.select()
+				.from(request)
+				.where(eq(request.id, result.id));
+			return linked!;
+		}
 		return result;
 	});
 }
