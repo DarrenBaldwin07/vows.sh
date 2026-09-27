@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
+import Image from 'next/image';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Copy, Link2 } from 'lucide-react';
+import { Copy } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Field, Message } from './ui';
 export type LinearConnection = {
@@ -44,7 +45,7 @@ export function LinearIntegration({
 		<div className='integration-card'>
 			<div className='integration-heading'>
 				<span className='linear-mark'>
-					<Link2 size={24} aria-hidden='true' />
+					<Image src='/linear.svg' width={40} height={40} alt='' />
 				</span>
 				<div>
 					<h2>Linear</h2>
