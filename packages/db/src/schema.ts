@@ -40,6 +40,7 @@ export const organization = pgTable('Organization', {
 	id: id(),
 	clerkOrganizationId: text('clerkOrganizationId').notNull().unique(),
 	portalSlug: text('portalSlug'),
+	internalDomain: text('internalDomain'),
 	createdAt: createdAt(),
 });
 export const customer = pgTable(

@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import {
 	Select,
 	SelectContent,
@@ -14,6 +15,7 @@ import { api } from '@/lib/api';
 import { Field, Loading, Message, Modal } from './ui';
 type AccessKind = 'email' | 'domain' | 'regex';
 type Sharing = {
+	internalDomain: string | null;
 	link: { id: string; token: string; path: string } | null;
 	access: { id: string; email: string; kind: AccessKind; accepted: boolean }[];
 };
@@ -188,6 +190,17 @@ export function SharingDialog({
 								Allowed people can view requests and submit new ones. Share the
 								portal link with them directly; no invitation email is sent.
 							</p>
+							{query.data?.internalDomain && (
+								<div className='access-row'>
+									<span>
+										@{query.data.internalDomain}
+										<small>Internal domain · All customer portals</small>
+									</span>
+									<Link className='button small-button' href='/settings'>
+										Manage in settings
+									</Link>
+								</div>
+							)}
 							{query.data?.access.map((person) => (
 								<div className='access-row' key={person.id}>
 									<span>

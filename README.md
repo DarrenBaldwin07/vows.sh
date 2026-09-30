@@ -50,6 +50,8 @@ No demo customer data is seeded. Sign in, create a workspace, and add a customer
 
 ## Customer sharing
 
+Admins can set an **Internal domain** in Settings to grant verified email addresses at that exact domain access to every enabled customer portal in the workspace. The inherited rule appears in each portal’s allowlist and applies to existing and future customers. Changing or clearing it takes effect across all portals; individual access rules remain in place.
+
 An admin opens a customer, chooses **Share portal**, adds allowed email addresses,
 and enables sharing. Copy the link and send it to those people; adding an email
 does not send an invitation. Customers must sign in using an allowed verified

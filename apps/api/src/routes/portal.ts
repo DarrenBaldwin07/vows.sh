@@ -54,6 +54,32 @@ async function authorizePortal(c: ApiContext) {
 		throw new HTTPException(404, {
 			message: 'This link is unavailable. Ask your contact for a new link.',
 		});
+	const [owner] = await c
+		.get('db')
+		.select({
+			organizationId: customer.organizationId,
+			name: customer.name,
+			imageData: customer.imageData,
+			archivedAt: customer.archivedAt,
+			clerkOrganizationId: organization.clerkOrganizationId,
+			internalDomain: organization.internalDomain,
+		})
+		.from(customer)
+		.innerJoin(organization, eq(customer.organizationId, organization.id))
+		.where(eq(customer.id, link.customerId));
+	if (!owner || owner.archivedAt)
+		throw new HTTPException(404, { message: 'This portal is unavailable.' });
+	const internalAccess = Boolean(
+		owner.internalDomain &&
+		matchesEmailAccess(
+			{
+				kind: 'domain',
+				email: owner.internalDomain,
+				clerkUserId: null,
+			},
+			user
+		)
+	);
 	const entries = user.verifiedEmails.length
 		? await c
 				.get('db')
@@ -67,13 +93,13 @@ async function authorizePortal(c: ApiContext) {
 				)
 		: [];
 	const access = entries.find((entry) => matchesEmailAccess(entry, user));
-	if (!access)
+	if (!access && !internalAccess)
 		throw new HTTPException(403, {
 			message:
 				'This account does not have access. Sign in with an allowed, verified email or ask your contact to add you.',
 		});
 	// Shared rules remain available to every matching verified user.
-	if (access.kind === 'email') {
+	if (!internalAccess && access?.kind === 'email') {
 		const claimed = await c
 			.get('db')
 			.update(customerAccess)
@@ -91,20 +117,6 @@ async function authorizePortal(c: ApiContext) {
 				message: 'This email invitation is no longer available.',
 			});
 	}
-	const [owner] = await c
-		.get('db')
-		.select({
-			organizationId: customer.organizationId,
-			name: customer.name,
-			imageData: customer.imageData,
-			archivedAt: customer.archivedAt,
-			clerkOrganizationId: organization.clerkOrganizationId,
-		})
-		.from(customer)
-		.innerJoin(organization, eq(customer.organizationId, organization.id))
-		.where(eq(customer.id, link.customerId));
-	if (!owner || owner.archivedAt)
-		throw new HTTPException(404, { message: 'This portal is unavailable.' });
 	return { customerId: link.customerId, owner };
 }
 async function renderPortal(c: ApiContext) {

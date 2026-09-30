@@ -11,6 +11,7 @@ import { portalRoutes } from './routes/portal.js';
 import { searchRoutes } from './routes/search.js';
 import { membersRoutes } from './routes/members.js';
 import { customersRoutes } from './routes/customers.js';
+import { settingsRoutes } from './routes/settings.js';
 import { sharingRoutes } from './routes/sharing.js';
 import { requestsRoutes } from './routes/requests.js';
 import { integrationsRoutes } from './routes/integrations.js';
@@ -66,6 +67,7 @@ export function createApp(database: () => Database = getDb) {
 	app.route('/', membersRoutes);
 	app.route('/', customersRoutes);
 	app.route('/', sharingRoutes);
+	app.route('/', settingsRoutes);
 	app.route('/', requestsRoutes);
 	app.route('/', integrationsRoutes);
 	app.route('/', linearRoutes);

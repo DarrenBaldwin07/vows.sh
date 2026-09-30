@@ -20,6 +20,7 @@ import { useRef, useState, type FormEvent, type ChangeEvent } from 'react';
 import { Field, Loading, Message, Modal } from '@/components/ui';
 import { clerkError } from '@/lib/clerk-error';
 import { AgentConnections } from '@/components/agent-connections';
+import { InternalDomainSettings } from '@/components/internal-domain-settings';
 import { WorkspaceLogo } from '@/components/workspace-logo';
 
 export default function SettingsPage() {
@@ -206,6 +207,7 @@ function WorkspaceSettings() {
 					</button>
 				</form>
 			</section>
+			<InternalDomainSettings />
 			<section className='settings-section'>
 				<h2>Invite a member</h2>
 				<form onSubmit={invite} className='invite-form'>

@@ -104,6 +104,12 @@ export const accessInput = z.discriminatedUnion('kind', [
 			}, 'Enter a valid RE2 regex without / delimiters or flags.'),
 	}),
 ]);
+export const workspaceSettingsInput = z
+	.object({
+		internalDomain: accessInput.options[1].shape.email.nullable(),
+	})
+	.strict();
+
 export const statusInput = z.object({ status: z.enum(statuses) });
 
 // Only Slack message permalinks, never arbitrary URLs or network fetches.

@@ -5,6 +5,7 @@ import {
 	isNull,
 	sql,
 	customer,
+	organization,
 	customerAccess,
 	customerShareLink,
 } from '@repo/db';
@@ -35,7 +36,16 @@ sharingRoutes.get('/manage/customers/:id/sharing', async (c) => {
 				isNull(customerAccess.revokedAt)
 			)
 		);
-	return c.json({ link: link ?? null, access });
+	const [workspace] = await c
+		.get('db')
+		.select({ internalDomain: organization.internalDomain })
+		.from(organization)
+		.where(eq(organization.id, owner.organizationId));
+	return c.json({
+		link: link ?? null,
+		access,
+		internalDomain: workspace!.internalDomain,
+	});
 });
 sharingRoutes.post('/manage/customers/:id/sharing', async (c) => {
 	admin(c);
