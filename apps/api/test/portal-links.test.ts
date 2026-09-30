@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { createApp } from '../src/app.js';
+import { createApiRoutes } from '../src/routes/api.js';
 import {
 	readableSlug,
 	portalAddressInput,
@@ -15,7 +16,7 @@ test('portal slugs normalize names and reject ambiguous URL segments', () => {
 	assert.equal(readableSlug('a'.repeat(200), 'customer').length, 50);
 	assert.deepEqual(
 		portalAddressInput.parse({ workspaceSlug: 'ACME', customerSlug: 'wave' }),
-		{ workspaceSlug: 'acme', customerSlug: 'wave' }
+		{ customerSlug: 'wave' }
 	);
 	for (const value of [
 		'../wave',
@@ -28,7 +29,6 @@ test('portal slugs normalize names and reject ambiguous URL segments', () => {
 	]) {
 		assert.equal(
 			portalAddressInput.safeParse({
-				workspaceSlug: 'acme',
 				customerSlug: value,
 			}).success,
 			false
@@ -43,6 +43,16 @@ test(
 		process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 		const db = getDb(),
 			app = createApp();
+		const publicApi = createApiRoutes({
+			dispatch: app.fetch,
+			authenticateSession: async () => new Response(null, { status: 401 }),
+		});
+		const preview = (path: string, image = false) =>
+			publicApi.request(
+				`http://test/api${path.replace('/share/', '/portal-preview/')}${image ? '?image=1' : ''}`
+			);
+		const logo =
+			'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
 		const suffix = randomUUID().slice(0, 8);
 		const admin: Identity = {
 			userId: `admin-${suffix}`,
@@ -123,6 +133,38 @@ test(
 				await call(`/manage/customers/${b.id}/sharing`, 'POST', {})
 			);
 			assert.equal(second.path, `${first.path}-2`);
+			assert.deepEqual(await (await preview(first.path)).json(), {
+				name: 'Wave',
+				hasImage: false,
+			});
+			assert.equal((await preview(first.path, true)).status, 404);
+			await ok(
+				await call(`/manage/customers/${a.id}`, 'PATCH', { imageData: logo })
+			);
+			for (const path of [first.path, first.legacyPath]) {
+				assert.deepEqual(await (await preview(path)).json(), {
+					name: 'Wave',
+					hasImage: true,
+				});
+				const image = await preview(path, true);
+				assert.equal(image.status, 200);
+				assert.equal(image.headers.get('content-type'), 'image/png');
+				assert.equal(image.headers.get('cache-control'), 'no-store');
+				assert.deepEqual(
+					Buffer.from(await image.arrayBuffer()),
+					Buffer.from(logo.split(',')[1]!, 'base64')
+				);
+			}
+			assert.equal(
+				(
+					await publicApi.request(
+						`http://test/api${first.path.replace('/share/', '/portal/')}`
+					)
+				).status,
+				401
+			);
+			assert.equal((await preview('/share/missing/workspace')).status, 404);
+
 			assert.equal((await portal(first.path)).status, 403);
 			assert.equal((await portal(first.legacyPath)).status, 403);
 			assert.equal(
@@ -141,7 +183,7 @@ test(
 					await call(
 						`/manage/customers/${a.id}/sharing`,
 						'PATCH',
-						{ workspaceSlug: 'test', customerSlug: 'wave' },
+						{ customerSlug: 'wave' },
 						{ ...admin, role: 'org:member' }
 					)
 				).status,
@@ -165,32 +207,32 @@ test(
 			assert.equal(sharing.link.path, first.path);
 			const changed = await ok<{ path: string }>(
 				await call(`/manage/customers/${a.id}/sharing`, 'PATCH', {
-					workspaceSlug: `new-${suffix}`,
 					customerSlug: 'wave-team',
 				})
 			);
-			assert.equal(changed.path, `/share/new-${suffix}/wave-team`);
+			assert.equal(
+				changed.path,
+				`/share/${first.path.split('/')[2]}/wave-team`
+			);
 			assert.equal((await portal(first.path)).status, 200);
 			assert.equal((await portal(first.legacyPath)).status, 200);
 			assert.equal((await portal(changed.path)).status, 200);
+			assert.equal((await preview(changed.path, true)).status, 200);
+			const foreignChanged = await ok<{ path: string }>(
+				await call(
+					`/manage/customers/${foreign.id}/sharing`,
+					'PATCH',
+					{ workspaceSlug: first.path.split('/')[2], customerSlug: 'takeover' },
+					other
+				)
+			);
 			assert.equal(
-				(
-					await call(
-						`/manage/customers/${foreign.id}/sharing`,
-						'PATCH',
-						{
-							workspaceSlug: first.path.split('/')[2],
-							customerSlug: 'takeover',
-						},
-						other
-					)
-				).status,
-				409
+				foreignChanged.path,
+				`/share/${secondWorkspace.path.split('/')[2]}/takeover`
 			);
 			assert.equal(
 				(
 					await call(`/manage/customers/${a.id}/sharing`, 'PATCH', {
-						workspaceSlug: second.path.split('/')[2],
 						customerSlug: 'wave-2',
 					})
 				).status,
@@ -199,24 +241,29 @@ test(
 			const rotated = await ok<{ path: string; legacyPath: string }>(
 				await call(`/manage/customers/${a.id}/sharing`, 'POST', {})
 			);
-			for (const path of [first.path, first.legacyPath, changed.path])
+			for (const path of [first.path, first.legacyPath, changed.path]) {
 				assert.equal((await portal(path)).status, 404);
+				assert.equal((await preview(path, true)).status, 404);
+			}
 			assert.equal((await portal(rotated.path)).status, 200);
 			await ok(
 				await call(`/manage/customers/${a.id}`, 'PATCH', { archived: true })
 			);
 			assert.equal((await portal(rotated.path)).status, 404);
+			assert.equal((await preview(rotated.path, true)).status, 404);
 			await ok(
 				await call(`/manage/customers/${a.id}`, 'PATCH', { archived: false })
 			);
 			await ok(await call(`/manage/customers/${a.id}/sharing`, 'DELETE'));
 			assert.equal((await portal(rotated.path)).status, 404);
+			assert.equal((await preview(rotated.path, true)).status, 404);
 			assert.equal((await portal(rotated.legacyPath)).status, 404);
 			const enabled = await ok<{ path: string }>(
 				await call(`/manage/customers/${a.id}/sharing`, 'POST', {})
 			);
 			assert.notEqual(enabled.path, rotated.path);
 			assert.equal((await portal(rotated.path)).status, 404);
+			assert.equal((await preview(rotated.path, true)).status, 404);
 			assert.equal((await portal(enabled.path)).status, 200);
 			// Upgrade a pre-migration token without rotating it or dropping customer access.
 			const legacyCustomer = await ok<{ id: string }>(

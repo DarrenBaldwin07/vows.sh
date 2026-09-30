@@ -24,7 +24,6 @@ export const portalSlugInput = z
 		'Use lowercase letters, numbers, and single hyphens.'
 	);
 export const portalAddressInput = z.object({
-	workspaceSlug: portalSlugInput,
 	customerSlug: portalSlugInput,
 });
 export function readableSlug(value: string, fallback: string) {
@@ -53,10 +52,9 @@ export async function publishPortalLink(
 		.select()
 		.from(organization)
 		.where(eq(organization.id, owner.organizationId));
-	const branding =
-		!initialOrg?.portalSlug && !options.address
-			? await c.env.workspaceBranding?.(initialOrg!.clerkOrganizationId)
-			: undefined;
+	const branding = !initialOrg?.portalSlug
+		? await c.env.workspaceBranding?.(initialOrg!.clerkOrganizationId)
+		: undefined;
 	return db.transaction(async (tx) => {
 		const [org] = await tx
 			.select()
@@ -100,7 +98,7 @@ export async function publishPortalLink(
 				.returning();
 		}
 		if (link!.path && !options.address) return link!;
-		let workspaceSlug = options.address?.workspaceSlug ?? org!.portalSlug;
+		let workspaceSlug = org!.portalSlug;
 		const base =
 			workspaceSlug ?? readableSlug(branding?.name ?? '', 'workspace');
 		for (let suffix = 1; ; suffix++) {
@@ -117,10 +115,6 @@ export async function publishPortalLink(
 				workspaceSlug = candidate;
 				break;
 			}
-			if (options.address)
-				throw new HTTPException(409, {
-					message: 'That workspace URL name is already taken.',
-				});
 		}
 		await tx
 			.update(organization)

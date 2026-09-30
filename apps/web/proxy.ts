@@ -3,7 +3,6 @@ const protectedPage = createRouteMatcher([
 	'/customers(.*)',
 	'/integrations(.*)',
 	'/settings(.*)',
-	'/share(.*)',
 ]);
 export default clerkMiddleware(async (auth, request) => {
 	if (protectedPage(request)) await auth.protect();

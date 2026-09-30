@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { isPortalPreviewRequest } from './portal-preview.js';
 import { app } from '../app.js';
 import { sessionBindings } from '../clerk.js';
 import { resolveAgent, checkAgentOrigin } from '../agent-auth.js';
@@ -11,6 +12,7 @@ export function createApiRoutes({
 	const routes = new Hono();
 	routes.all('/api/*', async (c) => {
 		const request = c.req.raw;
+		if (isPortalPreviewRequest(request)) return dispatch(request, {});
 		if (request.headers.has('Authorization')) {
 			checkAgentOrigin(request);
 			const { principal, bindings } = await resolveAgent(request);

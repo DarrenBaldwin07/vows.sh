@@ -118,7 +118,6 @@ export function SharingDialog({
 													suffix: 'sharing',
 													method: 'PATCH',
 													body: {
-														workspaceSlug: form.get('workspaceSlug'),
 														customerSlug: form.get('customerSlug'),
 													},
 												},
@@ -131,15 +130,6 @@ export function SharingDialog({
 											);
 										}}>
 										<div className='form-grid'>
-											<Field label='Workspace URL name'>
-												<input
-													name='workspaceSlug'
-													required
-													maxLength={60}
-													pattern='[a-z0-9]+(-[a-z0-9]+)*'
-													defaultValue={query.data!.link!.path.split('/')[2]}
-												/>
-											</Field>
 											<Field label='Customer URL name'>
 												<input
 													name='customerSlug'
@@ -151,9 +141,8 @@ export function SharingDialog({
 											</Field>
 										</div>
 										<p className='small muted'>
-											Use lowercase letters, numbers, and hyphens. These names
-											stay the same when you rename a customer. Changing the
-											workspace URL name also sets the default for future links.
+											Use lowercase letters, numbers, and hyphens. This URL name
+											stays the same when you rename a customer.
 										</p>
 										<button className='button' disabled={change.isPending}>
 											Save URL

@@ -6,6 +6,7 @@ import { getDb, type Database } from '@repo/db';
 import { identity, ensureOrganization, type Env } from './context.js';
 import { agentKeyRoutes } from './routes/agent-keys.js';
 import { slackRoutes } from './routes/slack.js';
+import { portalPreviewRoutes } from './routes/portal-preview.js';
 import { portalRoutes } from './routes/portal.js';
 import { searchRoutes } from './routes/search.js';
 import { membersRoutes } from './routes/members.js';
@@ -33,6 +34,12 @@ export function createApp(database: () => Database = getDb) {
 		console.error('API request failed', error.name);
 		return c.json({ error: 'Something went wrong. Please try again.' }, 500);
 	});
+	app.use('/portal-preview/*', async (c, next) => {
+		c.header('Cache-Control', 'no-store');
+		c.set('db', database());
+		await next();
+	});
+	app.route('/', portalPreviewRoutes);
 	app.use('*', async (c, next) => {
 		c.header('Cache-Control', 'private, no-store');
 		c.header('Referrer-Policy', 'no-referrer');
