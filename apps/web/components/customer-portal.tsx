@@ -3,7 +3,7 @@ import { RequestTimeline } from './request-timeline';
 import Image from 'next/image';
 import { useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { ChevronDown, Plus } from 'lucide-react';
+import { ChevronDown, Plus, Search } from 'lucide-react';
 import {
 	Tooltip,
 	TooltipContent,
@@ -42,6 +42,7 @@ export function CustomerPortal({
 	const [creating, setCreating] = useState(false);
 	const [expanded, setExpanded] = useState<Set<string>>(new Set());
 	const [submitted, setSubmitted] = useState(false);
+	const [search, setSearch] = useState('');
 	const query = useQuery({
 		queryKey: ['portal', locator, userId],
 		queryFn: ({ signal }) => api<Portal>(`/portal/${locator}`, { signal }),
@@ -49,6 +50,13 @@ export function CustomerPortal({
 		retry: false,
 		refetchInterval: 30000,
 	});
+	const term = search.trim().toLowerCase();
+	const requests = (query.data?.requests ?? []).filter(
+		(r) =>
+			!term ||
+			r.title.toLowerCase().includes(term) ||
+			r.description.toLowerCase().includes(term)
+	);
 	return (
 		<div className='portal'>
 			<header className='portal-header'>
@@ -142,11 +150,21 @@ export function CustomerPortal({
 							</span>
 							<span className='portal-live'>Updates automatically</span>
 						</div>
-						{query.data.requests.length ? (
+						{query.data.requests.length > 0 && (
+							<label className='portal-search'>
+								<Search size={14} aria-hidden='true' />
+								<input
+									type='search'
+									aria-label='Search requests'
+									placeholder='Search requests…'
+									value={search}
+									onChange={(event) => setSearch(event.target.value)}
+								/>
+							</label>
+						)}
+						{requests.length ? (
 							statuses.map((status) => {
-								const rows = query.data.requests.filter(
-									(r) => r.status === status
-								);
+								const rows = requests.filter((r) => r.status === status);
 								return (
 									rows.length > 0 && (
 										<section key={status} className='portal-group'>
@@ -212,6 +230,10 @@ export function CustomerPortal({
 									)
 								);
 							})
+						) : term ? (
+							<EmptyState title='No matching requests'>
+								Try another search.
+							</EmptyState>
 						) : (
 							<EmptyState title='Your requests will appear here'>
 								Have something in mind? Create a request to let the team know.
