@@ -2122,6 +2122,33 @@ h3 {
 		animation: none;
 	}
 }
+.portal-search {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 24px;
+	height: 36px;
+	padding: 0 12px;
+	border: 1px solid #e5e5e5;
+	border-radius: 8px;
+	background: #fff;
+	color: #a3a3a3;
+}
+.portal-search:focus-within {
+	border-color: var(--ring);
+}
+.portal-search > input {
+	flex: 1;
+	min-width: 0;
+	border: 0;
+	outline: 0;
+	background: transparent;
+	font-size: 13px;
+	color: #262626;
+}
+.portal-search > input::placeholder {
+	color: #a3a3a3;
+}
 .portal .portal-group {
 	margin-bottom: 28px;
 }
